@@ -1,0 +1,11 @@
+app:
+  cookie:
+    secure: false # true in prod
+    same-site: Lax # None in prod   - - -- Lax
+    days-to-expire: 1
+  jwt:
+    expiration: 60000
+
+logging:
+  level:
+    com.codigozerocuatro: debug
