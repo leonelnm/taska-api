@@ -1,11 +1,25 @@
-app:
-  cookie:
-    secure: false # true in prod
-    same-site: Lax # None in prod   - - -- Lax
-    days-to-expire: 1
-  jwt:
-    expiration: 60000
+spring:
+  datasource:
+    url: jdbc:postgresql://localhost:5432/taskadb
+    username: taskauser
+    password: taskapass
+    driver-class-name: org.postgresql.Driver
+  jpa:
+    show-sql: true
 
 logging:
   level:
     com.codigozerocuatro: debug
+    org.hibernate.SQL: debug
+    org.hibernate.type.descriptor.sql.BasicBinder: trace
+
+app:
+  cors:
+    allowed-origins:
+      - http://localhost:5173
+  user:
+    default-password: password
+  jwt:
+    secret: mySecretKeyThatShouldBeVeryLongAndSecure123456789
+    expiration: 60000  # 1 minuto en millisegundos
+    refresh-expiration: 86400000 # 24 horas en millisegundos

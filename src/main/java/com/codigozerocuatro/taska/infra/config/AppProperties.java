@@ -3,9 +3,12 @@ package com.codigozerocuatro.taska.infra.config;
 import jakarta.validation.Valid;
 import jakarta.validation.constraints.Min;
 import jakarta.validation.constraints.NotBlank;
+import jakarta.validation.constraints.NotEmpty;
 import org.hibernate.validator.constraints.Length;
 import org.springframework.boot.context.properties.ConfigurationProperties;
 import org.springframework.validation.annotation.Validated;
+
+import java.util.List;
 
 
 @Validated
@@ -13,7 +16,7 @@ import org.springframework.validation.annotation.Validated;
 public record AppProperties(
         @Valid Jwt jwt,
         @Valid User user,
-        Cookie cookie
+        @Valid Cors cors
 
 ) {
     public record User(
@@ -32,11 +35,8 @@ public record AppProperties(
             long refreshExpiration
     ) {}
 
-    public record Cookie(
-            boolean secure,
-            String sameSite,
-            @Min(value = 1, message = "Days to expire must be at least 1 day")
-            int daysToExpire
-    ){}
-
+    public record Cors(
+            @NotEmpty(message = "CORS allowed origins cannot be blank")
+            List<@NotBlank(message = "Origin cannot be blank")String> allowedOrigins
+    ) {}
 }

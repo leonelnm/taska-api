@@ -2,9 +2,6 @@ spring:
   application.name: taska
 
   datasource:
-    url: jdbc:postgresql://localhost:5432/taskadb
-    username: taskauser
-    password: taskapass
     driver-class-name: org.postgresql.Driver
 
   jpa:
@@ -13,21 +10,8 @@ spring:
     properties:
       hibernate:
         dialect: org.hibernate.dialect.PostgreSQLDialect
-    show-sql: true
+    show-sql: false
 
 logging:
   level:
-    org.hibernate.SQL: debug
-    org.hibernate.type.descriptor.sql.BasicBinder: trace
-
-app:
-  user:
-    default-password: ${USER_DEFAULT_PASSWORD:password}
-  jwt:
-    secret: ${JWT_SECRET:mySecretKeyThatShouldBeVeryLongAndSecure123456789}
-    expiration: ${JWT_EXPIRATION:3600000}  # 1 hora en millisegundos
-    refresh-expiration: ${JWT_REFRESH_EXPIRATION:86400000} # 24 horas en millisegundos
-  cookie:
-    secure: true
-    same-site: None
-    days-to-expire: 7
+    root: info
