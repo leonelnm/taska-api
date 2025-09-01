@@ -23,7 +23,7 @@ public class InitialDataLoader implements CommandLineRunner {
 
     @Transactional
     @Override
-    public void run(String... args) throws Exception {
+    public void run(String... args){
         loadUserAdmin();
     }
 
