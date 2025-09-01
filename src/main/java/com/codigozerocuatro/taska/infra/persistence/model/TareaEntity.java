@@ -31,6 +31,7 @@ public class TareaEntity {
     private LocalDate fecha;
 
     @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
     private TipoRecurrencia tipoRecurrencia;
 
     @Enumerated(EnumType.STRING)
