@@ -1,8 +1,8 @@
 spring:
   datasource:
     url: ${DB_URL:jdbc:postgresql://localhost:5432/taskadb}
-    username: taskauser
-    password: taskapass
+    username: ${DB_USER:taskauser}
+    password: ${DB_PASS:taskapass}
     driver-class-name: org.postgresql.Driver
   jpa:
     hibernate:

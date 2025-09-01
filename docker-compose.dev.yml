@@ -4,10 +4,8 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: taska-app-dev
-#    restart: unless-stopped
-    environment:
-      SPRING_PROFILES_ACTIVE: dev
-      DB_URL: jdbc:postgresql://postgres:5432/taskadb
+    env_file:
+      - .env
     ports:
       - "8080:8080"
     volumes:
