@@ -1,0 +1,36 @@
+services:
+  taskadoc:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: taska-app-dev
+#    restart: unless-stopped
+    environment:
+      SPRING_PROFILES_ACTIVE: dev
+      DB_URL: jdbc:postgresql://postgres:5432/taskadb
+    ports:
+      - "8080:8080"
+    volumes:
+      - ./src:/app/src
+      - ./pom.xml:/app/pom.xml
+      - ./mvnw:/app/mvnw
+      - ./.mvn:/app/.mvn
+    command: ./mvnw spring-boot:run
+    depends_on:
+      - postgres
+
+  postgres:
+    image: postgres:latest
+    container_name: taska-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: taskauser
+      POSTGRES_PASSWORD: taskapass
+      POSTGRES_DB: taskadb
+    ports:
+      - "5432:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+
+volumes:
+  postgres_data:

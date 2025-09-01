@@ -27,7 +27,7 @@ public class AuthConfig {
     }
 
     @Bean
-    public AuthenticationProvider authenticationProvider(
+    public DaoAuthenticationProvider authenticationProvider(
             UserDetailsService userDetailsService,
             PasswordEncoder passwordEncoder) {
         DaoAuthenticationProvider provider = new DaoAuthenticationProvider(userDetailsService);
