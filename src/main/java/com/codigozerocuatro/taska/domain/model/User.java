@@ -8,6 +8,7 @@ import org.springframework.security.core.authority.SimpleGrantedAuthority;
 import org.springframework.security.core.userdetails.UserDetails;
 
 import java.util.Collection;
+import java.util.List;
 
 @Getter
 @Setter
@@ -17,9 +18,7 @@ public class User implements UserDetails {
 
     public User(UserEntity user) {
         this.user = user;
-        this.authorities = user.getRoles().stream()
-                .map(role -> new SimpleGrantedAuthority("ROLE_" + role.name()))
-                .toList();
+        this.authorities = List.of(new SimpleGrantedAuthority("ROLE_" + user.getRol().name()));
     }
 
     @Override

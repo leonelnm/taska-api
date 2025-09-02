@@ -1,14 +1,13 @@
 package com.codigozerocuatro.taska.infra.persistence.model;
 
 import com.codigozerocuatro.taska.domain.model.PuestoEnum;
+import com.codigozerocuatro.taska.domain.model.RolEnum;
 import jakarta.persistence.*;
 import lombok.Data;
 import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.UpdateTimestamp;
 
 import java.time.LocalDateTime;
-import java.util.HashSet;
-import java.util.Set;
 
 @Entity
 @Table(name = "usuario")
@@ -39,15 +38,13 @@ public class UserEntity {
     @Column(name = "fecha_actualizacion")
     private LocalDateTime fechaActualizacion;
 
-    // Relación muchos a muchos con roles (PuestoEnum)
-    @ElementCollection(targetClass = PuestoEnum.class, fetch = FetchType.EAGER)
     @Enumerated(EnumType.STRING)
-    @CollectionTable(
-            name = "usuario_roles",
-            joinColumns = @JoinColumn(name = "usuario_id")
-    )
-    @Column(name = "puesto")
-    private Set<PuestoEnum> roles = new HashSet<>();
+    @Column(name = "puesto", nullable = false)
+    private PuestoEnum puesto;
+
+    @Enumerated(EnumType.STRING)
+    @Column(name = "rol", nullable = false)
+    private RolEnum rol;
 
     public UserEntity() {}
 
@@ -58,7 +55,7 @@ public class UserEntity {
     }
 
     public boolean isAdmin() {
-        return roles.stream().anyMatch(role -> role.equals(PuestoEnum.ADMINISTRADOR));
+        return RolEnum.ADMIN == rol;
     }
 
 }

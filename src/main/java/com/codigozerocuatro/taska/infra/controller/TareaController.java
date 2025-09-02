@@ -8,7 +8,6 @@ import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
-import org.springframework.security.core.Authentication;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -20,21 +19,21 @@ public class TareaController {
 
     private final TareaService tareaService;
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping
     public ResponseEntity<TareaEntity> create(@Valid @RequestBody CrearTareaRequest request) {
         TareaEntity tarea = tareaService.crear(request);
         return ResponseEntity.ok(tarea);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     @PostMapping("/batch")
     public ResponseEntity<List<TareaEntity>> createList(@Valid @RequestBody List<CrearTareaRequest> requests) {
         List<TareaEntity> tareasCreadas = tareaService.crearTodas(requests);
         return ResponseEntity.ok(tareasCreadas);
     }
 
-    @PreAuthorize("hasRole('ADMINISTRADOR')")
+    @PreAuthorize("hasRole('ADMIN')")
     @GetMapping("/all")
     public ResponseEntity<List<TareaEntity>> getAll() {
         List<TareaEntity> tareas = tareaService.todas();

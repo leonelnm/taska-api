@@ -51,7 +51,7 @@ public class AuthController {
                         user.getUsername(),
                         user.getNombre(),
                         user.isAdmin(),
-                        user.getRoles().stream().map(Enum::name).toList()
+                        user.getPuesto().toString()
                 ));
 
         return ResponseEntity.ok()

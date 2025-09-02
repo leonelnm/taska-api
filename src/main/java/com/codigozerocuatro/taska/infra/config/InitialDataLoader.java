@@ -1,6 +1,7 @@
 package com.codigozerocuatro.taska.infra.config;
 
 import com.codigozerocuatro.taska.domain.model.PuestoEnum;
+import com.codigozerocuatro.taska.domain.model.RolEnum;
 import com.codigozerocuatro.taska.infra.persistence.model.UserEntity;
 import com.codigozerocuatro.taska.infra.persistence.repository.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
@@ -9,8 +10,6 @@ import org.springframework.boot.CommandLineRunner;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Component;
 import org.springframework.transaction.annotation.Transactional;
-
-import java.util.Set;
 
 @Component
 @RequiredArgsConstructor
@@ -36,7 +35,8 @@ public class InitialDataLoader implements CommandLineRunner {
         user.setUsername("admin");
         user.setPassword(passwordEncoder.encode(appProperties.user().defaultPassword()));
         user.setNombre("Admin");
-        user.setRoles(Set.of(PuestoEnum.ADMINISTRADOR));
+        user.setRol(RolEnum.ADMIN);
+        user.setPuesto(PuestoEnum.ENCARGADO);
 
         userJpaRepository.save(user);
         log.info("Usuario admin cargado");

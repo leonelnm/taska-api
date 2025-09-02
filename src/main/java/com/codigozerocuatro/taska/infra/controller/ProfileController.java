@@ -23,7 +23,7 @@ public class ProfileController {
                 user.getUsername(),
                 user.getNombre(),
                 user.isAdmin(),
-                user.getRoles().stream().map(Enum::name).toList()
+                user.getPuesto().toString()
         );
         return ResponseEntity.ok().body(response);
     }

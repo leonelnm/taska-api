@@ -1,7 +1,7 @@
 package com.codigozerocuatro.taska.domain.model;
 
 public enum PuestoEnum {
-    ADMINISTRADOR,
+    ENCARGADO,
     COCINERO,
     CAMARERO,
     PINCHE

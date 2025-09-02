@@ -97,7 +97,7 @@ public class TareaServiceImpl implements TareaService {
             return filtro.puestoId();
         }
 
-        PuestoEntity puesto = puestoService.obtenerPuestoPorNombre(user.getRoles().iterator().next());
+        PuestoEntity puesto = puestoService.obtenerPuestoPorNombre(user.getPuesto());
         return puesto.getId();
     }
 

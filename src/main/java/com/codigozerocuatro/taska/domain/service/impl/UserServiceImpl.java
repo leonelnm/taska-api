@@ -1,5 +1,6 @@
 package com.codigozerocuatro.taska.domain.service.impl;
 
+import com.codigozerocuatro.taska.domain.model.RolEnum;
 import com.codigozerocuatro.taska.domain.service.PuestoService;
 import com.codigozerocuatro.taska.domain.service.UserService;
 import com.codigozerocuatro.taska.infra.dto.CrearUserRequest;
@@ -14,7 +15,7 @@ import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
-import java.util.Set;
+import java.util.Optional;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -30,15 +31,16 @@ public class UserServiceImpl implements UserService {
 
         PuestoEntity puesto = puestoService.obtenerPuestoPorId(request.puestoId());
 
-        UserEntity userFound = obtenerUsuarioPorUsername(request.username());
-        if (userFound != null) {
+        Optional<UserEntity> userFound = userJpaRepository.findByUsername(request.username());
+        if (userFound.isPresent()) {
             throw new ValidationException("El username existe");
         }
 
         UserEntity newUser = new UserEntity();
         newUser.setUsername(request.username());
         newUser.setNombre(request.nombre());
-        newUser.setRoles(Set.of(puesto.getPuesto()));
+        newUser.setPuesto(puesto.getPuesto());
+        newUser.setRol(RolEnum.USER);
         newUser.setPassword(passwordEncoder.encode(request.password()));
         return userJpaRepository.save(newUser);
     }
