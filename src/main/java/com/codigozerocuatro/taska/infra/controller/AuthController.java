@@ -1,7 +1,6 @@
 package com.codigozerocuatro.taska.infra.controller;
 
 import com.codigozerocuatro.taska.domain.model.User;
-import com.codigozerocuatro.taska.infra.config.AppProperties;
 import com.codigozerocuatro.taska.infra.dto.ErrorResponse;
 import com.codigozerocuatro.taska.infra.dto.LoginReponse;
 import com.codigozerocuatro.taska.infra.dto.LoginRequest;
@@ -12,15 +11,12 @@ import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpStatus;
-import org.springframework.http.ResponseCookie;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
 import org.springframework.security.core.userdetails.UserDetails;
 import org.springframework.security.core.userdetails.UserDetailsService;
 import org.springframework.web.bind.annotation.*;
-
-import java.time.Duration;
 
 @Slf4j
 @RequiredArgsConstructor
@@ -33,7 +29,6 @@ public class AuthController {
     private final AuthenticationManager authenticationManager;
     private final JwtService jwtService;
     private final UserDetailsService userDetailsService;
-    private final AppProperties appProperties;
 
     @PostMapping("/login")
     public ResponseEntity<LoginReponse> login(@Valid @RequestBody LoginRequest request) {
