@@ -33,18 +33,21 @@ public class UserController {
     }
 
     @PostMapping("/password")
-    public void changePassword(@RequestBody AdminChangePasswordRequest request){
+    public ResponseEntity<Void> changePassword(@RequestBody AdminChangePasswordRequest request){
         userService.adminChangePassword(request.username(), request.password());
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{username}/activar")
-    public void activate(@PathVariable String username){
+    public ResponseEntity<Void> activate(@PathVariable String username){
         userService.activarUsuario(username);
+        return ResponseEntity.noContent().build();
     }
 
     @PutMapping("/{username}/desactivar")
-    public void deactivate(@PathVariable String username){
+    public ResponseEntity<Void> deactivate(@PathVariable String username){
         userService.desactivarUsuario(username);
+        return ResponseEntity.noContent().build();
     }
 
 }
