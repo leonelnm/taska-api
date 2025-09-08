@@ -104,8 +104,9 @@ public class TareaServiceImpl implements TareaService {
     @Override
     public TareaEntity completar(Long id) {
         TareaEntity tarea = findById(id);
-        tarea.setCompletada(true);
-        tarea.setFechaCompletada(Instant.now());
+        boolean isCompletada = tarea.isCompletada();
+        tarea.setCompletada(!isCompletada);
+        tarea.setFechaCompletada(!isCompletada ? Instant.now() : null);
         return tareaRepository.save(tarea);
     }
 
