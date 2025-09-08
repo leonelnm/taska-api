@@ -20,4 +20,6 @@ public interface UserService {
     void adminChangePassword(String username, String password);
 
     List<UserEntity> buscarTodos();
+
+    void changePassword(UserEntity user, String currentPassword, String newPassword);
 }

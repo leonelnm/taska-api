@@ -10,6 +10,7 @@ import com.codigozerocuatro.taska.infra.persistence.repository.UserJpaRepository
 import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -84,5 +85,20 @@ public class UserServiceImpl implements UserService {
         List<UserEntity> users = userJpaRepository.findAll();
         users.forEach(user -> user.setPassword(":)"));
         return users;
+    }
+
+    @Override
+    public void changePassword(UserEntity user, String currentPassword, String newPassword) {
+        if (newPassword.equals(currentPassword)) {
+            throw new ValidationException("La nueva contraseña no puede ser igual a la actual");
+        }
+
+        if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
+            throw new BadCredentialsException("La contraseña actual es incorrecta");
+        }
+
+        String encodedPassword = passwordEncoder.encode(newPassword);
+        user.setPassword(encodedPassword);
+        userJpaRepository.save(user);
     }
 }
