@@ -147,6 +147,10 @@ public class TareaValidator {
      * @throws ValidationException si el valor no puede convertirse en una constante válida del enum
      */
     private static <T extends Enum<T>> T parseEnum(String value, Class<T> enumClass, Supplier<String> errorMessage) {
+        if (value == null) {
+            throw new ValidationException(errorMessage.get());
+        }
+
         try {
             return Enum.valueOf(enumClass, value);
         } catch (IllegalArgumentException e) {
