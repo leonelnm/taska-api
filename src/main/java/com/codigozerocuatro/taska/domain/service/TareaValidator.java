@@ -1,6 +1,8 @@
 package com.codigozerocuatro.taska.domain.service;
 
+import com.codigozerocuatro.taska.domain.exception.AppValidationException;
 import com.codigozerocuatro.taska.domain.model.DiaSemana;
+import com.codigozerocuatro.taska.domain.model.ErrorCode;
 import com.codigozerocuatro.taska.domain.model.TareaValida;
 import com.codigozerocuatro.taska.domain.model.TipoRecurrencia;
 import com.codigozerocuatro.taska.infra.dto.CrearTareaRequest;
@@ -9,6 +11,7 @@ import org.springframework.stereotype.Component;
 
 import java.time.LocalDate;
 import java.util.EnumSet;
+import java.util.Map;
 import java.util.function.Predicate;
 import java.util.function.Supplier;
 
@@ -71,7 +74,8 @@ public class TareaValidator {
                 TipoRecurrencia.class,
                 () -> String.format(ERROR_TIPO_RECURRENCIA_INVALIDO,
                         tipoRecurrenciaStr,
-                        String.join(", ", getEnumNames(TipoRecurrencia.class)))
+                        String.join(", ", getEnumNames(TipoRecurrencia.class))),
+                "tipoRecurrencia"
         );
     }
 
@@ -90,7 +94,8 @@ public class TareaValidator {
                 DiaSemana.class,
                 () -> String.format(ERROR_DIA_SEMANA_INVALIDO,
                         valor,
-                        String.join(", ", getEnumNames(DiaSemana.class)))
+                        String.join(", ", getEnumNames(DiaSemana.class))),
+                "diaSemana"
         );
     }
 
@@ -112,7 +117,7 @@ public class TareaValidator {
         }
 
         if (!validadorRango.test(valor)) {
-            throw new ValidationException(String.format(ERROR_DIA_MES_INVALIDO, valor));
+            throw new AppValidationException("diaMes", ErrorCode.DIA_MES_INVALID_RANGE);
         }
 
         return valor;
@@ -124,11 +129,11 @@ public class TareaValidator {
         }
 
         if (fecha == null) {
-            throw new ValidationException(ERROR_FECHA_REQUERIDA);
+            throw new AppValidationException("fecha", ERROR_FECHA_REQUERIDA);
         }
 
         if (fecha.isBefore(LocalDate.now())) {
-            throw new ValidationException(ERROR_FECHA_PASADA);
+            throw new AppValidationException("fecha", ERROR_FECHA_PASADA);
         }
 
         return fecha;
@@ -146,15 +151,15 @@ public class TareaValidator {
      * @return la constante del enum analizada del tipo especificado
      * @throws ValidationException si el valor no puede convertirse en una constante válida del enum
      */
-    private static <T extends Enum<T>> T parseEnum(String value, Class<T> enumClass, Supplier<String> errorMessage) {
+    private static <T extends Enum<T>> T parseEnum(String value, Class<T> enumClass, Supplier<String> errorMessage, String fieldName) {
         if (value == null) {
-            throw new ValidationException(errorMessage.get());
+            throw new AppValidationException(Map.of(fieldName, errorMessage.get()));
         }
 
         try {
             return Enum.valueOf(enumClass, value);
         } catch (IllegalArgumentException e) {
-            throw new ValidationException(errorMessage.get());
+            throw new AppValidationException(Map.of(fieldName, errorMessage.get()));
         }
     }
 

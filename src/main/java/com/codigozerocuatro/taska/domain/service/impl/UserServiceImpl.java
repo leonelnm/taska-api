@@ -1,5 +1,7 @@
 package com.codigozerocuatro.taska.domain.service.impl;
 
+import com.codigozerocuatro.taska.domain.exception.AppValidationException;
+import com.codigozerocuatro.taska.domain.model.ErrorCode;
 import com.codigozerocuatro.taska.domain.model.RolEnum;
 import com.codigozerocuatro.taska.domain.service.PuestoService;
 import com.codigozerocuatro.taska.domain.service.UserService;
@@ -7,15 +9,14 @@ import com.codigozerocuatro.taska.infra.dto.CrearUserRequest;
 import com.codigozerocuatro.taska.infra.persistence.model.PuestoEntity;
 import com.codigozerocuatro.taska.infra.persistence.model.UserEntity;
 import com.codigozerocuatro.taska.infra.persistence.repository.UserJpaRepository;
-import jakarta.validation.ValidationException;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
-import org.springframework.security.authentication.BadCredentialsException;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
 
 import java.util.List;
+import java.util.Map;
 import java.util.Optional;
 
 @Slf4j
@@ -34,7 +35,7 @@ public class UserServiceImpl implements UserService {
 
         Optional<UserEntity> userFound = userJpaRepository.findByUsername(request.username());
         if (userFound.isPresent()) {
-            throw new ValidationException("El username existe");
+            throw new AppValidationException(Map.of("username", ErrorCode.USERNAME_ALREADY_EXISTS));
         }
 
         UserEntity newUser = new UserEntity();
@@ -90,11 +91,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public void changePassword(UserEntity user, String currentPassword, String newPassword) {
         if (newPassword.equals(currentPassword)) {
-            throw new ValidationException("La nueva contraseña no puede ser igual a la actual");
+            throw new AppValidationException(Map.of("password", ErrorCode.PASSWORD_SAME_BEFORE));
         }
 
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new BadCredentialsException("La contraseña actual es incorrecta");
+            throw new AppValidationException(Map.of("password", ErrorCode.PASSWORD_INCORRECT));
         }
 
         String encodedPassword = passwordEncoder.encode(newPassword);
