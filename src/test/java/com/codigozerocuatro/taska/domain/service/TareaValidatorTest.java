@@ -1,16 +1,17 @@
 package com.codigozerocuatro.taska.domain.service;
 
+import com.codigozerocuatro.taska.domain.exception.AppValidationException;
 import com.codigozerocuatro.taska.domain.model.DiaSemana;
 import com.codigozerocuatro.taska.domain.model.TareaValida;
 import com.codigozerocuatro.taska.domain.model.TipoRecurrencia;
 import com.codigozerocuatro.taska.infra.dto.CrearTareaRequest;
-import jakarta.validation.ValidationException;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 import java.time.LocalDate;
 
-import static org.junit.jupiter.api.Assertions.*;
+import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TareaValidatorTest {
 
@@ -24,13 +25,13 @@ public class TareaValidatorTest {
     @Test
     public void testValidarTareaRequestConRecurrenciaUnicaYFechaVaciaLanzaExcepcion() {
         CrearTareaRequest request = crearCrearTareaRequest(TipoRecurrencia.UNA_VEZ, null);
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     @Test
     public void testValidarTareaRequestConRecurrenciaUnicaYFechaPasadaLanzaExcepcion() {
         CrearTareaRequest request = crearCrearTareaRequest(TipoRecurrencia.UNA_VEZ, DiaSemana.LUNES.name());
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     @Test
@@ -50,13 +51,13 @@ public class TareaValidatorTest {
     @Test
     public void testValidarTareaRequestConRecurrenciaMensualYDia40ComoDiaMesLanzaExcepcion() {
         CrearTareaRequest request = crearCrearTareaRequest(TipoRecurrencia.MENSUAL, 40, null);
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     @Test
     public void testValidarTareaRequestConRecurrenciaMensualYDiaNegativoComoDiaMesLanzaExcepcion() {
         CrearTareaRequest request = crearCrearTareaRequest(TipoRecurrencia.MENSUAL, -1, null);
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     @Test
@@ -69,20 +70,20 @@ public class TareaValidatorTest {
     @Test
     public void testValidarTareaRequestConRecurrenciaQuincenalYDiaSemanaVacioLanzaExcepcion() {
         CrearTareaRequest request = crearCrearTareaRequest(TipoRecurrencia.QUINCENAL, null);
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     @Test
     public void testValidarTareaRequestConRecurrenciaQuincenalYDiaSemanaFakeLanzaExcepcion() {
         CrearTareaRequest request = crearCrearTareaRequest(TipoRecurrencia.QUINCENAL, "FAKE");
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
 
     @Test
     public void testValidarTareaRequestConRecurrenciaUnaVezYFechaPasadaLanzaExcepcion() {
         CrearTareaRequest request = crearCrearTareaRequest(TipoRecurrencia.UNA_VEZ, null, LocalDate.now().minusDays(1));
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     @Test
@@ -95,7 +96,7 @@ public class TareaValidatorTest {
     @Test
     public void testValidarTareaRequestConRecurrenciaFakeLanzaExcepcion() {
         CrearTareaRequest request = new CrearTareaRequest("Descripción de la tarea", 1L, 2L, "tipoRecurrencia.FAKE", null, null, null);
-        assertThrows(ValidationException.class, () -> tareaValidator.validarTareaRequest(request));
+        assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     private CrearTareaRequest crearCrearTareaRequest(TipoRecurrencia tipoRecurrencia, String diaSemana) {
