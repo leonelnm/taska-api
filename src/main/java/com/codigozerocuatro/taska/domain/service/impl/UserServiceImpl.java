@@ -91,11 +91,11 @@ public class UserServiceImpl implements UserService {
     @Override
     public void changePassword(UserEntity user, String currentPassword, String newPassword) {
         if (newPassword.equals(currentPassword)) {
-            throw new AppValidationException(Map.of("password", ErrorCode.PASSWORD_SAME_BEFORE));
+            throw new AppValidationException(Map.of("newPassword", ErrorCode.PASSWORD_SAME_CURRENT));
         }
 
         if (!passwordEncoder.matches(currentPassword, user.getPassword())) {
-            throw new AppValidationException(Map.of("password", ErrorCode.PASSWORD_INCORRECT));
+            throw new AppValidationException(Map.of("currentPassword", ErrorCode.PASSWORD_INCORRECT));
         }
 
         String encodedPassword = passwordEncoder.encode(newPassword);

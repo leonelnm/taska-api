@@ -29,7 +29,7 @@ public final class ErrorCode {
     public static final String PASSWORD_MIN_LENGTH = "error.password.min_length";
     public static final String PASSWORD_NO_SPACES = "error.password.no_spaces";
     public static final String PASSWORD_COMPLEXITY = "error.password.complexity";
-    public static final String PASSWORD_SAME_BEFORE = "error.password.same_before";
+    public static final String PASSWORD_SAME_CURRENT = "error.password.same_as_current";
     public static final String PASSWORD_INCORRECT = "error.password.incorrect";
 
     public static final String PUESTO_REQUIRED = "error.puesto.required";

@@ -31,7 +31,7 @@ public class ProfileController {
         return ResponseEntity.ok().body(response);
     }
 
-    @PostMapping
+    @PostMapping("password")
     public ResponseEntity<Void> changePassword(Authentication authentication, @Valid @RequestBody ChangePasswordRequest request) {
         User userAuthorized = (User) authentication.getPrincipal();
         UserEntity user = userAuthorized.getUser();
