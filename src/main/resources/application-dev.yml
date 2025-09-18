@@ -18,6 +18,7 @@ logging:
     org.hibernate.SQL: debug
     org.hibernate.type.descriptor.sql.BasicBinder: trace
     root: info
+    org.springframework.cache: trace
 
 app:
   cors:
@@ -28,5 +29,7 @@ app:
     default-password: password
   jwt:
     secret: mySecretKeyThatShouldBeVeryLongAndSecure123456789
-    expiration: 60000  # 1 minuto en millisegundos
+    expiration: 300000  # 1 minuto en millisegundos
     refresh-expiration: 86400000 # 24 horas en millisegundos
+  cache:
+    user.spec: maximumSize=3,expireAfterWrite=1m

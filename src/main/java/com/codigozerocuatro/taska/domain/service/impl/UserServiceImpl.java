@@ -11,6 +11,7 @@ import com.codigozerocuatro.taska.infra.persistence.model.UserEntity;
 import com.codigozerocuatro.taska.infra.persistence.repository.UserJpaRepository;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.cache.annotation.CacheEvict;
 import org.springframework.security.core.userdetails.UsernameNotFoundException;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.stereotype.Service;
@@ -60,6 +61,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "USER", allEntries = true, cacheManager = "cacheManagerUser")
     public void desactivarUsuario(String username) {
         UserEntity user = obtenerUsuarioPorUsernameActivo(username, true);
         user.setActivo(false);
@@ -67,6 +69,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "USER", allEntries = true, cacheManager = "cacheManagerUser")
     public void activarUsuario(String username) {
         UserEntity user = obtenerUsuarioPorUsernameActivo(username, false);
         user.setActivo(true);
@@ -74,6 +77,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "USER", key = "#username", cacheManager = "cacheManagerUser")
     public void adminChangePassword(String username, String password) {
         UserEntity user = obtenerUsuarioPorUsername(username);
         user.setPassword(passwordEncoder.encode(password));
@@ -89,6 +93,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
+    @CacheEvict(value = "USER", key = "#user.username", cacheManager = "cacheManagerUser")
     public void changePassword(UserEntity user, String currentPassword, String newPassword) {
         if (newPassword.equals(currentPassword)) {
             throw new AppValidationException(Map.of("newPassword", ErrorCode.PASSWORD_SAME_CURRENT));

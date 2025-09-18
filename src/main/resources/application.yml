@@ -13,6 +13,12 @@ spring:
     enabled: true
     baseline-on-migrate: true
 
+  # Configuración de caché
+  cache:
+    type: caffeine
+    caffeine:
+      spec: maximumSize=100,expireAfterWrite=30m
+
 logging:
   file:
     name: ./logs/taska.log
@@ -25,3 +31,7 @@ logging:
     root: info
     org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
     com.codigozerocuatro.taska.infra.config.HttpLoggingFilter: info
+
+app:
+  cache:
+    user.spec: maximumSize=100,expireAfterWrite=5m
