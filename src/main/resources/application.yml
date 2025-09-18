@@ -24,3 +24,4 @@ logging:
   level:
     root: info
     org.springframework.security.config.annotation.authentication.configuration.InitializeUserDetailsBeanManagerConfigurer: error
+    com.codigozerocuatro.taska.infra.config.HttpLoggingFilter: info
