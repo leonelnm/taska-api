@@ -27,6 +27,7 @@ public final class ErrorCode {
 
     public static final String PASSWORD_REQUIRED = "error.password.required";
     public static final String PASSWORD_MIN_LENGTH = "error.password.min_length";
+    public static final String PASSWORD_MAX_LENGTH = "error.username.max_length";
     public static final String PASSWORD_NO_SPACES = "error.password.no_spaces";
     public static final String PASSWORD_COMPLEXITY = "error.password.complexity";
     public static final String PASSWORD_SAME_CURRENT = "error.password.same_as_current";
