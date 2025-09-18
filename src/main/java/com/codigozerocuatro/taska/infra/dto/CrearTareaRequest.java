@@ -13,6 +13,7 @@ public record CrearTareaRequest(
         @NotNull(message = ErrorCode.TIPO_RECURRENCIA_REQUIRED) String tipoRecurrencia,
         String diaSemana,
         Integer diaMes,
-        LocalDate fecha
+        LocalDate fecha,
+        Integer numeroRepeticiones
 ) {
 }

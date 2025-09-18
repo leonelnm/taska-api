@@ -40,5 +40,6 @@ public final class ErrorCode {
     public static final String TURNO_REQUIRED = "error.turno.required";
     public static final String TIPO_RECURRENCIA_REQUIRED = "error.tipoRecurrencia.required";
     public static final String DIA_MES_INVALID_RANGE = "error.diames.invalid.range";
+    public static final String NUMERO_REPETICIONES_INVALID_RANGE = "error.numeroRepeticiones.invalid.range";
 }
 

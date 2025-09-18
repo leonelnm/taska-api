@@ -24,6 +24,13 @@ public class TareaValidator {
     private static final String ERROR_DIA_SEMANA_INVALIDO = "Día de la semana inválido: %s. Valores válidos: %s";
     private static final String ERROR_DIA_MES_INVALIDO = "El día del mes debe estar entre 1 y 31, valor proporcionado: %d";
 
+    // Valores por defecto para número de repeticiones
+    private static final int REPETICIONES_DIARIA_DEFAULT = 90;    // 3 meses
+    private static final int REPETICIONES_SEMANAL_DEFAULT = 52;   // 1 año
+    private static final int REPETICIONES_QUINCENAL_DEFAULT = 26; // 1 año
+    private static final int REPETICIONES_MENSUAL_DEFAULT = 12;   // 1 año
+    private static final int REPETICIONES_MAX = 365;             // Máximo 1 año
+
 
     private static final EnumSet<TipoRecurrencia> RECURRENCIAS_CON_DIA_SEMANA =
             EnumSet.of(TipoRecurrencia.SEMANAL, TipoRecurrencia.QUINCENAL);
@@ -48,6 +55,8 @@ public class TareaValidator {
 
         LocalDate fecha = validarFecha(request.fecha(), TipoRecurrencia.UNA_VEZ.equals(tipoRecurrencia));
 
+        Integer numeroRepeticiones = validarNumeroRepeticiones(request.numeroRepeticiones(), tipoRecurrencia);
+
         return new TareaValida(
                 request.descripcion(),
                 request.puestoId(),
@@ -55,7 +64,8 @@ public class TareaValidator {
                 tipoRecurrencia,
                 diaSemana,
                 diaMes,
-                fecha
+                fecha,
+                numeroRepeticiones
         );
     }
 
@@ -116,6 +126,10 @@ public class TareaValidator {
             return null;
         }
 
+        if(valor == null) {
+            throw new AppValidationException("diaMes", "es requerido");
+        }
+
         if (!validadorRango.test(valor)) {
             throw new AppValidationException("diaMes", ErrorCode.DIA_MES_INVALID_RANGE);
         }
@@ -137,6 +151,31 @@ public class TareaValidator {
         }
 
         return fecha;
+    }
+
+    private Integer validarNumeroRepeticiones(Integer numeroRepeticiones, TipoRecurrencia tipoRecurrencia) {
+        // Para UNA_VEZ, no se aplican repeticiones
+        if (tipoRecurrencia == TipoRecurrencia.UNA_VEZ) {
+            return 1;
+        }
+
+        // Si no se especifica, usar valores por defecto
+        if (numeroRepeticiones == null) {
+            return switch (tipoRecurrencia) {
+                case DIARIA -> REPETICIONES_DIARIA_DEFAULT;
+                case SEMANAL -> REPETICIONES_SEMANAL_DEFAULT;
+                case QUINCENAL -> REPETICIONES_QUINCENAL_DEFAULT;
+                case MENSUAL -> REPETICIONES_MENSUAL_DEFAULT;
+                default -> 1;
+            };
+        }
+
+        // Validar rango
+        if (numeroRepeticiones < 1 || numeroRepeticiones > REPETICIONES_MAX) {
+            throw new AppValidationException("numeroRepeticiones", ErrorCode.NUMERO_REPETICIONES_INVALID_RANGE);
+        }
+
+        return numeroRepeticiones;
     }
 
     /**

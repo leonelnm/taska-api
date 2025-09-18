@@ -9,5 +9,6 @@ public record TareaValida(
         TipoRecurrencia tipoRecurrencia,
         DiaSemana diaSemana,
         Integer diaMes,
-        LocalDate fecha
+        LocalDate fecha,
+        Integer numeroRepeticiones
 ) {}

@@ -39,6 +39,9 @@ public class TareaEntity {
 
     private Integer diaMes;
 
+    @Column(name = "id_tarea_padre")
+    private Long idTareaPadre;
+
     @ToString.Exclude
     @ManyToOne
     @JoinColumn(name = "puesto_id")
