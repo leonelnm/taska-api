@@ -34,4 +34,4 @@ logging:
 
 app:
   cache:
-    user.spec: maximumSize=100,expireAfterWrite=5m
+    user.spec: maximumSize=100,expireAfterWrite=15m
