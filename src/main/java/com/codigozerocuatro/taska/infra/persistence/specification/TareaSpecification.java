@@ -5,6 +5,8 @@ import com.codigozerocuatro.taska.domain.model.TipoRecurrencia;
 import com.codigozerocuatro.taska.infra.persistence.model.TareaEntity;
 import org.springframework.data.jpa.domain.Specification;
 
+import java.time.LocalDate;
+
 public final class TareaSpecification {
 
     public static Specification<TareaEntity> idEquals(Long id) {
@@ -35,6 +37,11 @@ public final class TareaSpecification {
     public static Specification<TareaEntity> isCompletadaEquals(Boolean completada) {
         return (root, query, cb)
                 -> completada == null ? null : cb.equal(root.get("completada"), completada);
+    }
+
+    public static Specification<TareaEntity> fechaIs(LocalDate fecha) {
+        return (root, query, cb)
+                -> fecha == null ? null : cb.equal(root.get("fecha"), fecha);
     }
 
 }
