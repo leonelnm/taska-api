@@ -1,5 +1,6 @@
 package com.codigozerocuatro.taska.infra.config;
 
+import com.codigozerocuatro.taska.domain.exception.AppEntityNotFoundException;
 import com.codigozerocuatro.taska.domain.exception.AppValidationException;
 import com.codigozerocuatro.taska.domain.model.ErrorCode;
 import com.codigozerocuatro.taska.infra.dto.ErrorResponse;
@@ -32,22 +33,24 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(ValidationException.class)
     public ResponseEntity<ErrorResponse> handleValidationException(ValidationException ex) {
-        log.warn("Error validacion: {}", ex.getLocalizedMessage());
         ErrorResponse body = new ErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.VALIDATION_FAILED);
         return ResponseEntity.badRequest().body(body);
     }
 
     @ExceptionHandler(EntityNotFoundException.class)
     public ResponseEntity<ErrorResponse> handleEntityNotFoundException(EntityNotFoundException ex) {
-        log.warn("Recurso no encontrado {}", ex.getLocalizedMessage());
         ErrorResponse body = new ErrorResponse(HttpStatus.NOT_FOUND, ErrorCode.ENTITY_NOT_FOUND);
+        return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
+    }
+
+    @ExceptionHandler(AppEntityNotFoundException.class)
+    public ResponseEntity<ErrorResponse> handleAppEntityNotFoundException(AppEntityNotFoundException ex) {
+        ErrorResponse body = new ErrorResponse(HttpStatus.NOT_FOUND, ErrorCode.ENTITY_NOT_FOUND, Map.of("value", ex.getValue()));
         return ResponseEntity.status(HttpStatus.NOT_FOUND).body(body);
     }
 
     @ExceptionHandler(MethodArgumentNotValidException.class)
     public ResponseEntity<ErrorResponse> handleMethodArgumentNotValidException(MethodArgumentNotValidException ex) {
-        log.warn("Validación fallida: {}", ex.getMessage());
-
         Map<String, String> details = ex.getBindingResult()
                 .getFieldErrors()
                 .stream()
@@ -79,7 +82,6 @@ public class GlobalExceptionHandler {
 
     @ExceptionHandler(NoResourceFoundException.class)
     public ResponseEntity<ErrorResponse> handleNoResourceFoundException(NoResourceFoundException ex) {
-        log.warn("NoResourceFoundException {}", ex.getLocalizedMessage());
         ErrorResponse body = new ErrorResponse(HttpStatus.BAD_REQUEST, ErrorCode.RESOURCE_NOT_FOUND);
         return ResponseEntity.status(HttpStatus.BAD_REQUEST).body(body);
     }
