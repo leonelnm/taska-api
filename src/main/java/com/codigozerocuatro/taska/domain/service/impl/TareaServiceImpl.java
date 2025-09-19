@@ -1,8 +1,7 @@
 package com.codigozerocuatro.taska.domain.service.impl;
 
-import com.codigozerocuatro.taska.domain.exception.AppValidationException;
+import com.codigozerocuatro.taska.domain.exception.AppEntityNotFoundException;
 import com.codigozerocuatro.taska.domain.model.DiaSemana;
-import com.codigozerocuatro.taska.domain.model.ErrorCode;
 import com.codigozerocuatro.taska.domain.model.TareaValida;
 import com.codigozerocuatro.taska.domain.model.TipoRecurrencia;
 import com.codigozerocuatro.taska.domain.service.PuestoService;
@@ -47,10 +46,10 @@ public class TareaServiceImpl implements TareaService {
         // Obtener entidades necesarias
         PuestoEntity puesto = puestoService.obtenerPuestoPorId(tareaValidada.puestoId());
         TurnoEntity turno = turnoRepository.findById(tareaValidada.turnoId())
-                .orElseThrow(() -> new AppValidationException("turnoId", ErrorCode.ENTITY_NOT_FOUND));
+                .orElseThrow(() -> new AppEntityNotFoundException(tareaValidada.turnoId()));
         
         // 1. Crear y persistir la tarea padre
-        TareaEntity tareaPadre = recurrenciaGenerator.crearTareaPadre(tareaValidada, puesto, turno);
+        TareaEntity tareaPadre = recurrenciaGenerator.componerTareaPadre(tareaValidada, puesto, turno);
         TareaEntity tareaPadreGuardada = tareaRepository.save(tareaPadre);
         
         // 2. Generar y persistir las tareas hijas (solo si hay más de una repetición)
@@ -62,24 +61,6 @@ public class TareaServiceImpl implements TareaService {
         // Devolver la tarea padre para mantener compatibilidad con la API
         return tareaPadreGuardada;
     }
-
-//    private TareaEntity persistir(TareaValida tareaValidada ) {
-//        PuestoEntity puesto = puestoService.obtenerPuestoPorId(tareaValidada.puestoId());
-//        TurnoEntity turno = turnoRepository.findById(tareaValidada.turnoId())
-//                .orElseThrow(() -> new EntityNotFoundException("Turno " + tareaValidada.turnoId() + " no encontrado"));
-//
-//        TareaEntity tarea = new TareaEntity();
-//        tarea.setDescripcion(tareaValidada.descripcion());
-//        tarea.setTipoRecurrencia(tareaValidada.tipoRecurrencia());
-//        tarea.setDiaSemana(tareaValidada.diaSemana());
-//        tarea.setDiaMes(tareaValidada.diaMes());
-//        tarea.setFecha(tareaValidada.fecha());
-//        tarea.setPuesto(puesto);
-//        tarea.setTurno(turno);
-//
-//        return tareaRepository.save(tarea);
-//    }
-
 
     @Override
     public List<TareaEntity> todas() {
@@ -105,7 +86,9 @@ public class TareaServiceImpl implements TareaService {
                         TareaSpecification.turnoEquals(filtro.turnoId()),
                         TareaSpecification.diaSemanaEquals(diaSemana),
                         TareaSpecification.tipoRecurrenciaEquals(tipoRecurrencia),
-                        TareaSpecification.isCompletadaEquals(filtro.completada()))
+                        TareaSpecification.isCompletadaEquals(filtro.completada()),
+                        TareaSpecification.fechaIs(filtro.fecha())
+                )
         );
 
         return tareaRepository.findAll(spec);
@@ -153,36 +136,30 @@ public class TareaServiceImpl implements TareaService {
 
     @Override
     public void eliminarTareaYPosteriores(Long id) {
-        TareaEntity tarea = findById(id);
-        
-        // Obtener el ID de la tarea padre
-        Long idTareaPadre = tarea.getIdTareaPadre() != null ? tarea.getIdTareaPadre() : id;
-        
-        // Obtener todas las tareas posteriores a esta fecha en la serie
-        List<TareaEntity> tareasPosteriores = tareaRepository.findTareasPosteriores(idTareaPadre, tarea.getFecha());
-        
-        // Si la tarea actual es la padre, también buscar tareas posteriores que tengan como padre esta tarea
-        if (tarea.getIdTareaPadre() == null) {
-            List<TareaEntity> todasLasTareas = tareaRepository.findSerieRecurrente(id);
-            tareasPosteriores = todasLasTareas.stream()
-                    .filter(t -> !t.getFecha().isBefore(tarea.getFecha()))
-                    .toList();
-        }
-        
+        List<TareaEntity> tareasPosteriores = findTareasPosteriores(id);
+
         // Eliminar todas las tareas posteriores (incluyendo la actual)
         tareaRepository.deleteAll(tareasPosteriores);
     }
 
     @Override
     public void actualizarTareaYPosteriores(Long id, String nuevaDescripcion) {
+        List<TareaEntity> tareasPosteriores = findTareasPosteriores(id);
+
+        // Actualizar la descripción de todas las tareas posteriores (incluyendo la actual)
+        tareasPosteriores.forEach(t -> t.setDescripcion(nuevaDescripcion));
+        tareaRepository.saveAll(tareasPosteriores);
+    }
+
+    private List<TareaEntity> findTareasPosteriores(Long id) {
         TareaEntity tarea = findById(id);
-        
+
         // Obtener el ID de la tarea padre
         Long idTareaPadre = tarea.getIdTareaPadre() != null ? tarea.getIdTareaPadre() : id;
-        
+
         // Obtener todas las tareas posteriores a esta fecha en la serie
         List<TareaEntity> tareasPosteriores = tareaRepository.findTareasPosteriores(idTareaPadre, tarea.getFecha());
-        
+
         // Si la tarea actual es la padre, también buscar tareas posteriores que tengan como padre esta tarea
         if (tarea.getIdTareaPadre() == null) {
             List<TareaEntity> todasLasTareas = tareaRepository.findSerieRecurrente(id);
@@ -190,10 +167,7 @@ public class TareaServiceImpl implements TareaService {
                     .filter(t -> !t.getFecha().isBefore(tarea.getFecha()))
                     .toList();
         }
-        
-        // Actualizar la descripción de todas las tareas posteriores (incluyendo la actual)
-        tareasPosteriores.forEach(t -> t.setDescripcion(nuevaDescripcion));
-        tareaRepository.saveAll(tareasPosteriores);
+        return tareasPosteriores;
     }
 
     @Override
@@ -203,6 +177,6 @@ public class TareaServiceImpl implements TareaService {
 
     private TareaEntity findById(Long id) {
         return tareaRepository.findById(id)
-                .orElseThrow(() -> new EntityNotFoundException("Tarea " + id + " no encontrada"));
+                .orElseThrow(() -> new AppEntityNotFoundException(id));
     }
 }
