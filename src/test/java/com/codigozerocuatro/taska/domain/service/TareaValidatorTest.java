@@ -95,15 +95,15 @@ public class TareaValidatorTest {
 
     @Test
     public void testValidarTareaRequestConRecurrenciaFakeLanzaExcepcion() {
-        CrearTareaRequest request = new CrearTareaRequest("Descripción de la tarea", 1L, 2L, "tipoRecurrencia.FAKE", null, null, null, null);
+        CrearTareaRequest request = new CrearTareaRequest("Descripción de la tarea", 1L, 2L, "tipoRecurrencia.FAKE", null, null, null, null, null);
         assertThrows(AppValidationException.class, () -> tareaValidator.validarTareaRequest(request));
     }
 
     private CrearTareaRequest crearCrearTareaRequest(TipoRecurrencia tipoRecurrencia, String diaSemana) {
-        return new CrearTareaRequest("Descripción de la tarea", 1L, 2L, tipoRecurrencia.name(), diaSemana, null, null, null);
+        return new CrearTareaRequest("Descripción de la tarea", 1L, 2L, tipoRecurrencia.name(), diaSemana, null, null, null, null);
     }
 
     private CrearTareaRequest crearCrearTareaRequest(TipoRecurrencia tipoRecurrencia, Integer diaMes, LocalDate fecha) {
-        return new CrearTareaRequest("Descripción de la tarea", 1L, 2L, tipoRecurrencia.name(), null, diaMes, fecha, null);
+        return new CrearTareaRequest("Descripción de la tarea", 1L, 2L, tipoRecurrencia.name(), null, diaMes, fecha, null, null);
     }
 }

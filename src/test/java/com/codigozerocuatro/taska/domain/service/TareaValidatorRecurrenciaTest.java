@@ -24,7 +24,7 @@ public class TareaValidatorRecurrenciaTest {
         CrearTareaRequest request = new CrearTareaRequest(
                 "Tarea diaria", 1L, 2L, 
                 TipoRecurrencia.DIARIA.name(), 
-                null, null, null, null
+                null, null, null, null, null
         );
         
         var tareaValida = tareaValidator.validarTareaRequest(request);
@@ -38,7 +38,7 @@ public class TareaValidatorRecurrenciaTest {
         CrearTareaRequest request = new CrearTareaRequest(
                 "Tarea semanal", 1L, 2L, 
                 TipoRecurrencia.SEMANAL.name(), 
-                DiaSemana.LUNES.name(), null, null, null
+                DiaSemana.LUNES.name(), null, null, null, null
         );
         
         var tareaValida = tareaValidator.validarTareaRequest(request);
@@ -52,7 +52,7 @@ public class TareaValidatorRecurrenciaTest {
         CrearTareaRequest request = new CrearTareaRequest(
                 "Tarea mensual", 1L, 2L, 
                 TipoRecurrencia.MENSUAL.name(), 
-                null, 15, null, null
+                null, 15, null, null, null
         );
         
         var tareaValida = tareaValidator.validarTareaRequest(request);
@@ -66,7 +66,7 @@ public class TareaValidatorRecurrenciaTest {
         CrearTareaRequest request = new CrearTareaRequest(
                 "Tarea única", 1L, 2L, 
                 TipoRecurrencia.UNA_VEZ.name(), 
-                null, null, LocalDate.now().plusDays(1), 999
+                null, null, LocalDate.now().plusDays(1), 999, null
         );
         
         var tareaValida = tareaValidator.validarTareaRequest(request);
@@ -79,7 +79,7 @@ public class TareaValidatorRecurrenciaTest {
         CrearTareaRequest request = new CrearTareaRequest(
                 "Tarea personalizada", 1L, 2L, 
                 TipoRecurrencia.SEMANAL.name(), 
-                DiaSemana.VIERNES.name(), null, null, 10
+                DiaSemana.VIERNES.name(), null, null, 10, null
         );
         
         var tareaValida = tareaValidator.validarTareaRequest(request);
@@ -92,7 +92,7 @@ public class TareaValidatorRecurrenciaTest {
         CrearTareaRequest request = new CrearTareaRequest(
                 "Tarea excesiva", 1L, 2L, 
                 TipoRecurrencia.DIARIA.name(), 
-                null, null, null, 500 // Más de 365
+                null, null, null, 500, null // Más de 365
         );
         
         assertThrows(Exception.class, () -> tareaValidator.validarTareaRequest(request));
@@ -103,7 +103,7 @@ public class TareaValidatorRecurrenciaTest {
         CrearTareaRequest request = new CrearTareaRequest(
                 "Tarea sin repeticiones", 1L, 2L, 
                 TipoRecurrencia.DIARIA.name(), 
-                null, null, null, 0
+                null, null, null, 0, null
         );
         
         assertThrows(Exception.class, () -> tareaValidator.validarTareaRequest(request));

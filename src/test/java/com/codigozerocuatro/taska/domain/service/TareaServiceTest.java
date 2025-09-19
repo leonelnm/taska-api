@@ -61,6 +61,7 @@ public class TareaServiceTest {
                 DiaSemana.MIERCOLES.name(),
                 null,
                 null,
+                null,
                 null
         );
 
@@ -72,7 +73,8 @@ public class TareaServiceTest {
                 DiaSemana.MIERCOLES,
                 null,
                 null,
-                26
+                26,
+                null
         );
 
         PuestoEntity puesto = mock(PuestoEntity.class);
@@ -92,7 +94,7 @@ public class TareaServiceTest {
         when(validator.validarTareaRequest(request)).thenReturn(tareaValidada);
         when(puestoService.obtenerPuestoPorId(anyLong())).thenReturn(puesto);
         when(turnoRepository.findById(anyLong())).thenReturn(Optional.of(turno));
-        when(recurrenciaGenerator.crearTareaPadre(tareaValidada, puesto, turno)).thenReturn(tareaPadre);
+        when(recurrenciaGenerator.componerTareaPadre(tareaValidada, puesto, turno)).thenReturn(tareaPadre);
         when(tareaRepository.save(tareaPadre)).thenReturn(tareaPadreGuardada);
         when(recurrenciaGenerator.generarTareasHijas(tareaPadreGuardada, tareaValidada)).thenReturn(List.of());
 
@@ -108,7 +110,7 @@ public class TareaServiceTest {
     @Test
     void testBuscarTareas() {
         // given
-        FiltroTareaRequest filtro = new FiltroTareaRequest(1L, 1L, TipoRecurrencia.SEMANAL.name(), DiaSemana.LUNES.name(), false);
+        FiltroTareaRequest filtro = new FiltroTareaRequest(1L, 1L, TipoRecurrencia.SEMANAL.name(), DiaSemana.LUNES.name(), false, null);
 
         UserEntity user = new UserEntity();
         user.setRol(RolEnum.ADMIN);
@@ -150,8 +152,8 @@ public class TareaServiceTest {
 
     @Test
     void testCrearTodas() {
-        CrearTareaRequest req1 = new CrearTareaRequest("tarea1", 1L, 1L, TipoRecurrencia.UNA_VEZ.name(), null, null, LocalDate.now().plusDays(1), null);
-        CrearTareaRequest req2 = new CrearTareaRequest("tarea2", 1L, 1L, TipoRecurrencia.MENSUAL.name(), null, 5, null, null);
+        CrearTareaRequest req1 = new CrearTareaRequest("tarea1", 1L, 1L, TipoRecurrencia.UNA_VEZ.name(), null, null, LocalDate.now().plusDays(1), null, null);
+        CrearTareaRequest req2 = new CrearTareaRequest("tarea2", 1L, 1L, TipoRecurrencia.MENSUAL.name(), null, 5, null, null, null);
 
         TareaEntity tarea1 = new TareaEntity();
         tarea1.setId(1L);
@@ -161,8 +163,8 @@ public class TareaServiceTest {
         tarea2.setId(2L);
         tarea2.setDescripcion("tarea2");
 
-        TareaValida tareaValidada1 = new TareaValida("tarea1", 1L, 1L, TipoRecurrencia.UNA_VEZ, null, null, LocalDate.now().plusDays(1), 1);
-        TareaValida tareaValidada2 = new TareaValida("tarea2", 1L, 1L, TipoRecurrencia.MENSUAL, null, 5, null, 12);
+        TareaValida tareaValidada1 = new TareaValida("tarea1", 1L, 1L, TipoRecurrencia.UNA_VEZ, null, null, LocalDate.now().plusDays(1), 1, null);
+        TareaValida tareaValidada2 = new TareaValida("tarea2", 1L, 1L, TipoRecurrencia.MENSUAL, null, 5, null, 12, null);
 
         when(validator.validarTareaRequest(req1)).thenReturn(tareaValidada1);
         when(validator.validarTareaRequest(req2)).thenReturn(tareaValidada2);
@@ -170,7 +172,7 @@ public class TareaServiceTest {
         when(turnoRepository.findById(anyLong())).thenReturn(Optional.of(new TurnoEntity()));
         
         // Mock genérico para el generador
-        when(recurrenciaGenerator.crearTareaPadre(any(TareaValida.class), any(), any()))
+        when(recurrenciaGenerator.componerTareaPadre(any(TareaValida.class), any(), any()))
                 .thenReturn(tarea1, tarea2);
         when(recurrenciaGenerator.generarTareasHijas(any(TareaEntity.class), any(TareaValida.class)))
                 .thenReturn(List.of());
