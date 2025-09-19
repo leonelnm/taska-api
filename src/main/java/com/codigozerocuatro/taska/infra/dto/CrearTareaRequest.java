@@ -14,6 +14,7 @@ public record CrearTareaRequest(
         String diaSemana,
         Integer diaMes,
         LocalDate fecha,
-        Integer numeroRepeticiones
+        Integer numeroRepeticiones,
+        LocalDate fechaMaxima
 ) {
 }

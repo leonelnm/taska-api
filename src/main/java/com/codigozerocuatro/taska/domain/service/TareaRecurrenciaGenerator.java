@@ -8,6 +8,7 @@ import com.codigozerocuatro.taska.infra.persistence.model.TareaEntity;
 import com.codigozerocuatro.taska.infra.persistence.model.TurnoEntity;
 import org.springframework.stereotype.Component;
 
+import java.time.DateTimeException;
 import java.time.DayOfWeek;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
@@ -25,7 +26,7 @@ public class TareaRecurrenciaGenerator {
      * @param turno Entidad del turno
      * @return Tarea padre (sin persistir)
      */
-    public TareaEntity crearTareaPadre(TareaValida tareaValidada, PuestoEntity puesto, TurnoEntity turno) {
+    public TareaEntity componerTareaPadre(TareaValida tareaValidada, PuestoEntity puesto, TurnoEntity turno) {
         LocalDate fechaInicio = obtenerFechaInicio(tareaValidada);
         return crearTareaBase(tareaValidada, puesto, turno, fechaInicio);
     }
@@ -38,14 +39,56 @@ public class TareaRecurrenciaGenerator {
      * @return Lista de tareas hijas (sin persistir)
      */
     public List<TareaEntity> generarTareasHijas(TareaEntity tareaPadre, TareaValida tareaValidada) {
-        // Solo generar tareas hijas si hay más de una repetición
-        if (tareaValidada.numeroRepeticiones() <= 1) {
+        // Si es UNA_VEZ, no generar tareas hijas
+        if (tareaValidada.tipoRecurrencia() == TipoRecurrencia.UNA_VEZ) {
             return List.of();
         }
-        
-        LocalDate fechaInicio = tareaPadre.getFecha();
 
+        LocalDate fechaInicio = tareaPadre.getFecha();
         List<TareaEntity> tareasHijas = new ArrayList<>();
+
+        // Decidir si usar fechaMaxima o numeroRepeticiones
+        if (tareaValidada.fechaMaxima() != null) {
+            // Generar tareas hasta fechaMaxima
+            generarTareasHastaFecha(tareasHijas, tareaPadre, tareaValidada, fechaInicio);
+        } else {
+            // Generar según numeroRepeticiones (solo si hay más de una repetición)
+            if (tareaValidada.numeroRepeticiones() > 1) {
+                generarTareasPorRepeticiones(tareasHijas, tareaPadre, tareaValidada, fechaInicio);
+            }
+        }
+
+        return tareasHijas;
+    }
+
+    private void generarTareasHastaFecha(List<TareaEntity> tareasHijas, TareaEntity tareaPadre, 
+                                         TareaValida tareaValidada, LocalDate fechaInicio) {
+        LocalDate fechaMaxima = tareaValidada.fechaMaxima();
+        int repeticion = 1;
+        
+        while (true) {
+            LocalDate fechaTarea = calcularFechaPorRepeticion(fechaInicio, tareaValidada.tipoRecurrencia(), repeticion);
+            
+            // Si la fecha calculada supera la fecha máxima, detener
+            if (fechaTarea.isAfter(fechaMaxima)) {
+                break;
+            }
+            
+            TareaEntity tareaHija = crearTareaBase(tareaValidada, tareaPadre.getPuesto(), tareaPadre.getTurno(), fechaTarea);
+            tareaHija.setIdTareaPadre(tareaPadre.getId());
+            tareasHijas.add(tareaHija);
+            
+            repeticion++;
+            
+            // Límite de seguridad para evitar bucles infinitos
+            if (repeticion > 365) {
+                break;
+            }
+        }
+    }
+
+    private void generarTareasPorRepeticiones(List<TareaEntity> tareasHijas, TareaEntity tareaPadre, 
+                                             TareaValida tareaValidada, LocalDate fechaInicio) {
         // Generar desde la segunda repetición (índice 1) en adelante
         for (int i = 1; i < tareaValidada.numeroRepeticiones(); i++) {
             LocalDate fechaTarea = calcularFechaPorRepeticion(fechaInicio, tareaValidada.tipoRecurrencia(), i);
@@ -55,8 +98,6 @@ public class TareaRecurrenciaGenerator {
             
             tareasHijas.add(tareaHija);
         }
-        
-        return tareasHijas;
     }
 
     private TareaEntity crearTareaBase(TareaValida tareaValidada, PuestoEntity puesto, TurnoEntity turno, LocalDate fecha) {
@@ -114,19 +155,20 @@ public class TareaRecurrenciaGenerator {
         if (fecha.getDayOfMonth() <= diaMes) {
             try {
                 return fecha.withDayOfMonth(diaMes);
-            } catch (Exception e) {
+            } catch (DateTimeException e) {
                 // Si el día no existe en este mes, ir al siguiente mes
-                return fecha.plusMonths(1).withDayOfMonth(Math.min(diaMes, fecha.plusMonths(1).lengthOfMonth()));
+                return getSiguienteMes(fecha, diaMes);
             }
         } else {
-            // Si ya pasó el día en este mes, ir al siguiente mes
-            LocalDate siguienteMes = fecha.plusMonths(1);
-            try {
-                return siguienteMes.withDayOfMonth(diaMes);
-            } catch (Exception e) {
-                return siguienteMes.withDayOfMonth(Math.min(diaMes, siguienteMes.lengthOfMonth()));
-            }
+            return getSiguienteMes(fecha, diaMes);
         }
+    }
+
+    private LocalDate getSiguienteMes(LocalDate fecha, int diaMes) {
+        LocalDate siguienteMes = fecha.plusMonths(1);
+        int ultimoDiaSiguienteMes = siguienteMes.lengthOfMonth();
+        int diaAjustado = Math.min(diaMes, ultimoDiaSiguienteMes);
+        return siguienteMes.withDayOfMonth(diaAjustado);
     }
 
     private DayOfWeek convertirDiaSemana(DiaSemana diaSemana) {

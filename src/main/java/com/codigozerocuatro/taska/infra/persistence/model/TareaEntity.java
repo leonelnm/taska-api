@@ -28,6 +28,7 @@ public class TareaEntity {
 
     private Instant fechaCompletada;
 
+    @Column(nullable = false)
     private LocalDate fecha;
 
     @Enumerated(EnumType.STRING)

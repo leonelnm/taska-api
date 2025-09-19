@@ -10,5 +10,6 @@ public record TareaValida(
         DiaSemana diaSemana,
         Integer diaMes,
         LocalDate fecha,
-        Integer numeroRepeticiones
+        Integer numeroRepeticiones,
+        LocalDate fechaMaxima
 ) {}

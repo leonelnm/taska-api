@@ -21,8 +21,9 @@ public class TareaValidator {
     private static final String ERROR_TIPO_RECURRENCIA_INVALIDO = "Tipo de recurrencia inválido: %s. Valores válidos: %s";
     private static final String ERROR_FECHA_REQUERIDA = "El campo 'fecha' es obligatorio para recurrencia UNA_VEZ";
     private static final String ERROR_FECHA_PASADA = "La fecha debe ser posterior o igual a la fecha actual";
+    private static final String ERROR_FECHA_MAXIMA_SUPERA_UN_ANIO = "La fecha máxima no puede superar 1 año desde la fecha actual";
+    private static final String ERROR_FECHA_MAXIMA_MENOR_A_INICIO = "La fecha máxima debe ser posterior a la fecha de inicio";
     private static final String ERROR_DIA_SEMANA_INVALIDO = "Día de la semana inválido: %s. Valores válidos: %s";
-    private static final String ERROR_DIA_MES_INVALIDO = "El día del mes debe estar entre 1 y 31, valor proporcionado: %d";
 
     // Valores por defecto para número de repeticiones
     private static final int REPETICIONES_DIARIA_DEFAULT = 90;    // 3 meses
@@ -55,6 +56,8 @@ public class TareaValidator {
 
         LocalDate fecha = validarFecha(request.fecha(), TipoRecurrencia.UNA_VEZ.equals(tipoRecurrencia));
 
+        LocalDate fechaMaxima = validarFechaMaxima(request.fechaMaxima(), fecha, tipoRecurrencia);
+
         Integer numeroRepeticiones = validarNumeroRepeticiones(request.numeroRepeticiones(), tipoRecurrencia);
 
         return new TareaValida(
@@ -65,7 +68,8 @@ public class TareaValidator {
                 diaSemana,
                 diaMes,
                 fecha,
-                numeroRepeticiones
+                numeroRepeticiones,
+                fechaMaxima
         );
     }
 
@@ -127,7 +131,7 @@ public class TareaValidator {
         }
 
         if(valor == null) {
-            throw new AppValidationException("diaMes", "es requerido");
+            throw new AppValidationException("diaMes", ErrorCode.DIA_MES_REQUIRED);
         }
 
         if (!validadorRango.test(valor)) {
@@ -151,6 +155,38 @@ public class TareaValidator {
         }
 
         return fecha;
+    }
+
+    private LocalDate validarFechaMaxima(LocalDate fechaMaxima, LocalDate fechaInicio, TipoRecurrencia tipoRecurrencia) {
+        // Para UNA_VEZ, no se aplica fecha máxima
+        if (tipoRecurrencia == TipoRecurrencia.UNA_VEZ) {
+            return null;
+        }
+
+        // Si no se especifica fecha máxima, no hay validación
+        if (fechaMaxima == null) {
+            return null;
+        }
+
+        LocalDate hoy = LocalDate.now();
+        LocalDate unAnioDesdeHoy = hoy.plusYears(1);
+
+        // Validar que no supere 1 año desde hoy
+        if (fechaMaxima.isAfter(unAnioDesdeHoy)) {
+            throw new AppValidationException("fechaMaxima", ERROR_FECHA_MAXIMA_SUPERA_UN_ANIO);
+        }
+
+        // Validar que sea posterior a la fecha actual
+        if (fechaMaxima.isBefore(hoy)) {
+            throw new AppValidationException("fechaMaxima", ERROR_FECHA_PASADA);
+        }
+
+        // Si hay fecha de inicio, validar que fechaMaxima sea posterior
+        if (fechaInicio != null && fechaMaxima.isBefore(fechaInicio)) {
+            throw new AppValidationException("fechaMaxima", ERROR_FECHA_MAXIMA_MENOR_A_INICIO);
+        }
+
+        return fechaMaxima;
     }
 
     private Integer validarNumeroRepeticiones(Integer numeroRepeticiones, TipoRecurrencia tipoRecurrencia) {
