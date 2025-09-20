@@ -83,6 +83,19 @@ public class TareaServiceImpl implements TareaService {
                 ? null
                 : validator.getDiaSemana(filtro.diaSemana());
 
+        // Validar rango de fechas
+        validator.validarRangoFechas(filtro.fechaInicio(), filtro.fechaFin());
+
+        // Determinar qué specification de fecha usar
+        Specification<TareaEntity> fechaSpec;
+        if (filtro.fechaInicio() != null || filtro.fechaFin() != null) {
+            // Usar búsqueda por rango
+            fechaSpec = TareaSpecification.fechaBetween(filtro.fechaInicio(), filtro.fechaFin());
+        } else {
+            // Usar búsqueda por fecha específica (comportamiento original)
+            fechaSpec = TareaSpecification.fechaIs(filtro.fecha());
+        }
+
         Specification<TareaEntity> spec = Specification.allOf(
                 List.of(
                         TareaSpecification.puestoEquals(puestoId),
@@ -90,7 +103,7 @@ public class TareaServiceImpl implements TareaService {
                         TareaSpecification.diaSemanaEquals(diaSemana),
                         TareaSpecification.tipoRecurrenciaEquals(tipoRecurrencia),
                         TareaSpecification.isCompletadaEquals(filtro.completada()),
-                        TareaSpecification.fechaIs(filtro.fecha())
+                        fechaSpec
                 )
         );
 

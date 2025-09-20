@@ -8,6 +8,8 @@ public record FiltroTareaRequest(
         String tipoRecurrencia,
         String diaSemana,
         Boolean completada,
-        LocalDate fecha
+        LocalDate fecha,
+        LocalDate fechaInicio,
+        LocalDate fechaFin
 ) {
 }

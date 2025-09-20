@@ -24,6 +24,7 @@ public class TareaValidator {
     private static final String ERROR_FECHA_MAXIMA_SUPERA_UN_ANIO = "La fecha máxima no puede superar 1 año desde la fecha actual";
     private static final String ERROR_FECHA_MAXIMA_MENOR_A_INICIO = "La fecha máxima debe ser posterior a la fecha de inicio";
     private static final String ERROR_DIA_SEMANA_INVALIDO = "Día de la semana inválido: %s. Valores válidos: %s";
+    private static final String ERROR_RANGO_FECHAS_INVALIDO = "La fecha fin debe ser posterior o igual a la fecha inicio";
 
     // Valores por defecto para número de repeticiones
     private static final int REPETICIONES_DIARIA_DEFAULT = 90;    // 3 meses
@@ -242,5 +243,17 @@ public class TareaValidator {
         return java.util.Arrays.stream(enumClass.getEnumConstants())
                 .map(Enum::name)
                 .toArray(String[]::new);
+    }
+
+    /**
+     * Valida el rango de fechas para búsqueda
+     * @param fechaInicio fecha de inicio (obligatoria si se usa rango)
+     * @param fechaFin fecha de fin (opcional)
+     * @throws AppValidationException si las fechas no son válidas
+     */
+    public void validarRangoFechas(LocalDate fechaInicio, LocalDate fechaFin) {
+        if (fechaInicio != null && fechaFin != null && fechaFin.isBefore(fechaInicio)) {
+            throw new AppValidationException("fechaFin", ERROR_RANGO_FECHAS_INVALIDO);
+        }
     }
 }

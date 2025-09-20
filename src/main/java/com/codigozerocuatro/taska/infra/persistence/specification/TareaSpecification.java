@@ -44,4 +44,20 @@ public final class TareaSpecification {
                 -> fecha == null ? null : cb.equal(root.get("fecha"), fecha);
     }
 
+    public static Specification<TareaEntity> fechaBetween(LocalDate fechaInicio, LocalDate fechaFin) {
+        return (root, query, cb) -> {
+            if (fechaInicio == null) {
+                return null;
+            }
+            
+            if (fechaFin == null) {
+                // Si no hay fecha fin, buscar solo por fecha específica (fechaInicio)
+                return cb.equal(root.get("fecha"), fechaInicio);
+            }
+            
+            // Si hay ambas fechas, buscar en el rango
+            return cb.between(root.get("fecha"), fechaInicio, fechaFin);
+        };
+    }
+
 }

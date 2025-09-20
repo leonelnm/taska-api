@@ -110,7 +110,7 @@ public class TareaServiceTest {
     @Test
     void testBuscarTareas() {
         // given
-        FiltroTareaRequest filtro = new FiltroTareaRequest(1L, 1L, TipoRecurrencia.SEMANAL.name(), DiaSemana.LUNES.name(), false, null);
+        FiltroTareaRequest filtro = new FiltroTareaRequest(1L, 1L, TipoRecurrencia.SEMANAL.name(), DiaSemana.LUNES.name(), false, null, null, null);
 
         UserEntity user = new UserEntity();
         user.setRol(RolEnum.ADMIN);

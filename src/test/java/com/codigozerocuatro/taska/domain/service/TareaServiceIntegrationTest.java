@@ -1,12 +1,16 @@
 package com.codigozerocuatro.taska.domain.service;
 
+import com.codigozerocuatro.taska.domain.exception.AppValidationException;
 import com.codigozerocuatro.taska.domain.model.PuestoEnum;
+import com.codigozerocuatro.taska.domain.model.RolEnum;
 import com.codigozerocuatro.taska.domain.model.TipoRecurrencia;
 import com.codigozerocuatro.taska.domain.model.TurnoEnum;
 import com.codigozerocuatro.taska.infra.dto.CrearTareaRequest;
+import com.codigozerocuatro.taska.infra.dto.FiltroTareaRequest;
 import com.codigozerocuatro.taska.infra.persistence.model.PuestoEntity;
 import com.codigozerocuatro.taska.infra.persistence.model.TareaEntity;
 import com.codigozerocuatro.taska.infra.persistence.model.TurnoEntity;
+import com.codigozerocuatro.taska.infra.persistence.model.UserEntity;
 import com.codigozerocuatro.taska.infra.persistence.repository.PuestoJpaRepository;
 import com.codigozerocuatro.taska.infra.persistence.repository.TareaJpaRepository;
 import com.codigozerocuatro.taska.infra.persistence.repository.TurnoJpaRepository;
@@ -15,12 +19,14 @@ import org.junit.jupiter.api.Test;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.boot.test.context.SpringBootTest;
 import org.springframework.test.context.ActiveProfiles;
+import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.when;
 
 @SpringBootTest
 @ActiveProfiles("test")
@@ -38,6 +44,9 @@ public class TareaServiceIntegrationTest {
 
     @Autowired
     private TurnoJpaRepository turnoRepository;
+
+    @MockitoBean
+    private SecurityUtils securityUtils;
 
     private PuestoEntity puesto;
     private TurnoEntity turno;
@@ -59,6 +68,15 @@ public class TareaServiceIntegrationTest {
 
         // Configurar fecha base para la semana objetivo
         fechaBaseSemana = LocalDate.now().plusDays(30).with(java.time.DayOfWeek.MONDAY);
+
+        // Crear usuario admin para los tests de búsqueda
+        UserEntity adminUser = new UserEntity();
+        adminUser.setUsername("admin");
+        adminUser.setRol(RolEnum.ADMIN);
+        adminUser.setPuesto(PuestoEnum.ENCARGADO);
+
+        // Configurar mock de SecurityUtils para devolver el usuario admin
+        when(securityUtils.getCurrentAuthenticatedUser()).thenReturn(adminUser);
 
         // Crear 10 tareas usando el servicio
         crearTareasIniciales();
@@ -219,5 +237,121 @@ public class TareaServiceIntegrationTest {
             assertEquals(puesto.getId(), tarea.getPuesto().getId());
             assertEquals(turno.getId(), tarea.getTurno().getId());
         });
+    }
+
+    @Test
+    void testBuscarPorRangoFechas_FechaInicioSolamente() {
+        // given - Usar una fecha específica de las tareas creadas
+        LocalDate fechaBuscada = fechaBaseSemana.plusDays(2); // Miércoles
+        FiltroTareaRequest filtro = new FiltroTareaRequest(
+            null, null, null, null, null, null, 
+            fechaBuscada, null // solo fecha inicio
+        );
+
+        // when
+        List<TareaEntity> tareasEncontradas = tareaService.buscar(filtro);
+
+        // then
+        assertNotNull(tareasEncontradas);
+        assertEquals(1, tareasEncontradas.size(), "Debe encontrar exactamente 1 tarea para esa fecha específica");
+        assertEquals("Tarea Miércoles", tareasEncontradas.getFirst().getDescripcion());
+        assertEquals(fechaBuscada, tareasEncontradas.getFirst().getFecha());
+    }
+
+    @Test
+    void testBuscarPorRangoFechas_RangoCompleto() {
+        // given - Buscar en un rango que incluya varias tareas
+        LocalDate fechaInicio = fechaBaseSemana; // Lunes
+        LocalDate fechaFin = fechaBaseSemana.plusDays(4); // Viernes
+        FiltroTareaRequest filtro = new FiltroTareaRequest(
+            null, null, null, null, null, null,
+            fechaInicio, fechaFin
+        );
+
+        // when
+        List<TareaEntity> tareasEncontradas = tareaService.buscar(filtro);
+
+        // then
+        assertNotNull(tareasEncontradas);
+        assertEquals(4, tareasEncontradas.size(), "Debe encontrar 4 tareas en el rango Lunes-Viernes");
+        
+        // Verificar que contiene las tareas esperadas
+        List<String> descripciones = tareasEncontradas.stream()
+            .map(TareaEntity::getDescripcion)
+            .toList();
+        
+        assertTrue(descripciones.contains("Tarea Lunes"));
+        assertTrue(descripciones.contains("Tarea Martes"));
+        assertTrue(descripciones.contains("Tarea Miércoles"));
+        assertTrue(descripciones.contains("Tarea Viernes"));
+        assertFalse(descripciones.contains("Tarea Domingo")); // No debe incluir domingo que está fuera del rango
+    }
+
+    @Test
+    void testBuscarPorRangoFechas_RangoSinResultados() {
+        // given - Buscar en un rango donde no hay tareas
+        LocalDate fechaInicio = fechaBaseSemana.plusDays(3); // Jueves
+        LocalDate fechaFin = fechaBaseSemana.plusDays(3); // Jueves (mismo día)
+        FiltroTareaRequest filtro = new FiltroTareaRequest(
+            null, null, null, null, null, null,
+            fechaInicio, fechaFin
+        );
+
+        // when
+        List<TareaEntity> tareasEncontradas = tareaService.buscar(filtro);
+
+        // then
+        assertNotNull(tareasEncontradas);
+        assertTrue(tareasEncontradas.isEmpty(), "No debe encontrar tareas para el jueves (no hay tarea ese día)");
+    }
+
+    @Test
+    void testBuscarPorRangoFechas_ErrorFechaFinMenorAInicio() {
+        // given - Fechas en orden incorrecto
+        LocalDate fechaInicio = fechaBaseSemana.plusDays(4); // Viernes
+        LocalDate fechaFin = fechaBaseSemana.plusDays(1); // Martes (anterior al viernes)
+        FiltroTareaRequest filtro = new FiltroTareaRequest(
+            null, null, null, null, null, null,
+            fechaInicio, fechaFin
+        );
+
+        // when & then
+        AppValidationException exception = assertThrows(AppValidationException.class, () -> {
+            tareaService.buscar(filtro);
+        });
+
+        // Verificar el mensaje de error en el mapa de errores
+        assertTrue(exception.getErrors().containsKey("fechaFin"));
+        assertTrue(exception.getErrors().get("fechaFin").contains("La fecha fin debe ser posterior o igual a la fecha inicio"));
+    }
+
+    @Test
+    void testBuscarPorRangoFechas_RangoAmplio() {
+        // given - Buscar en un rango amplio que incluya tareas de múltiples semanas
+        LocalDate fechaInicio = fechaBaseSemana.minusWeeks(1); // Semana anterior
+        LocalDate fechaFin = fechaBaseSemana.plusWeeks(1).plusDays(6); // Domingo de la semana posterior
+        FiltroTareaRequest filtro = new FiltroTareaRequest(
+            null, null, null, null, null, null,
+            fechaInicio, fechaFin
+        );
+
+        // when
+        List<TareaEntity> tareasEncontradas = tareaService.buscar(filtro);
+
+        // then
+        assertNotNull(tareasEncontradas);
+        assertEquals(9, tareasEncontradas.size(), "Debe encontrar 9 tareas en el rango amplio");
+        
+        // Verificar que incluye tareas de diferentes semanas
+        List<String> descripciones = tareasEncontradas.stream()
+            .map(TareaEntity::getDescripcion)
+            .toList();
+        
+        assertTrue(descripciones.contains("Tarea Semana Anterior"));
+        assertTrue(descripciones.contains("Tarea Domingo Anterior"));
+        assertTrue(descripciones.contains("Tarea Lunes")); // Semana principal
+        assertTrue(descripciones.contains("Tarea Lunes Posterior"));
+        assertTrue(descripciones.contains("Tarea Miércoles Posterior"));
+        assertFalse(descripciones.contains("Tarea Semana Posterior")); // Esta está 2 semanas después, fuera del rango
     }
 }
