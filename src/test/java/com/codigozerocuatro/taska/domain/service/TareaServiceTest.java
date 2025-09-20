@@ -186,4 +186,88 @@ public class TareaServiceTest {
         assertEquals("tarea1", tareas.get(0).getDescripcion());
         assertEquals("tarea2", tareas.get(1).getDescripcion());
     }
+
+    @Test
+    void testObtenerTareasPorSemana_DevuelveTodas() {
+        // given
+        LocalDate fechaEnLaSemana = LocalDate.of(2025, 9, 17); // Miércoles
+        LocalDate lunes = LocalDate.of(2025, 9, 15);
+        LocalDate domingo = LocalDate.of(2025, 9, 21);
+
+        TareaEntity tarea1 = new TareaEntity();
+        tarea1.setId(1L);
+        tarea1.setDescripcion("Tarea Lunes");
+        tarea1.setFecha(lunes);
+
+        TareaEntity tarea2 = new TareaEntity();
+        tarea2.setId(2L);
+        tarea2.setDescripcion("Tarea Miércoles");
+        tarea2.setFecha(fechaEnLaSemana);
+
+        TareaEntity tarea3 = new TareaEntity();
+        tarea3.setId(3L);
+        tarea3.setDescripcion("Tarea Domingo");
+        tarea3.setFecha(domingo);
+
+        List<TareaEntity> tareasEsperadas = List.of(tarea1, tarea2, tarea3);
+
+        when(tareaRepository.findByFechaBetweenOrderByFechaAsc(lunes, domingo))
+                .thenReturn(tareasEsperadas);
+
+        // when
+        List<TareaEntity> tareas = tareaService.obtenerTareasPorSemana(fechaEnLaSemana);
+
+        // then
+        assertNotNull(tareas);
+        assertEquals(3, tareas.size());
+        assertEquals("Tarea Lunes", tareas.get(0).getDescripcion());
+        assertEquals("Tarea Miércoles", tareas.get(1).getDescripcion());
+        assertEquals("Tarea Domingo", tareas.get(2).getDescripcion());
+        assertEquals(lunes, tareas.get(0).getFecha());
+        assertEquals(fechaEnLaSemana, tareas.get(1).getFecha());
+        assertEquals(domingo, tareas.get(2).getFecha());
+
+        verify(tareaRepository).findByFechaBetweenOrderByFechaAsc(lunes, domingo);
+    }
+
+    @Test
+    void testObtenerTareasPorSemana_ExcluyeTareasFueraDeLaSemana() {
+        // given
+        LocalDate fechaEnLaSemana = LocalDate.of(2025, 9, 19); // Viernes
+        LocalDate lunes = LocalDate.of(2025, 9, 15);
+        LocalDate domingo = LocalDate.of(2025, 9, 21);
+
+        // Tareas dentro de la semana
+        TareaEntity tareaViernes = new TareaEntity();
+        tareaViernes.setId(1L);
+        tareaViernes.setDescripcion("Tarea Viernes");
+        tareaViernes.setFecha(fechaEnLaSemana);
+
+        TareaEntity tareaSabado = new TareaEntity();
+        tareaSabado.setId(2L);
+        tareaSabado.setDescripcion("Tarea Sábado");
+        tareaSabado.setFecha(LocalDate.of(2025, 9, 20));
+
+        // Solo las tareas de la semana son devueltas por el repositorio
+        List<TareaEntity> tareasEnLaSemana = List.of(tareaViernes, tareaSabado);
+
+        when(tareaRepository.findByFechaBetweenOrderByFechaAsc(lunes, domingo))
+                .thenReturn(tareasEnLaSemana);
+
+        // when
+        List<TareaEntity> tareas = tareaService.obtenerTareasPorSemana(fechaEnLaSemana);
+
+        // then
+        assertNotNull(tareas);
+        assertEquals(2, tareas.size());
+        assertEquals("Tarea Viernes", tareas.get(0).getDescripcion());
+        assertEquals("Tarea Sábado", tareas.get(1).getDescripcion());
+
+        // Verificar que se llamó con las fechas correctas de la semana
+        verify(tareaRepository).findByFechaBetweenOrderByFechaAsc(lunes, domingo);
+
+        // Verificar que las tareas están ordenadas por fecha
+        assertTrue(tareas.get(0).getFecha().isBefore(tareas.get(1).getFecha()) ||
+                   tareas.get(0).getFecha().isEqual(tareas.get(1).getFecha()));
+    }
 }

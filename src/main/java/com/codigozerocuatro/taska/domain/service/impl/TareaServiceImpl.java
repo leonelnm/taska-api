@@ -26,6 +26,9 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.Instant;
+import java.time.LocalDate;
+import java.time.temporal.TemporalAdjusters;
+import java.time.DayOfWeek;
 import java.util.List;
 
 @Service
@@ -173,6 +176,17 @@ public class TareaServiceImpl implements TareaService {
     @Override
     public List<TareaEntity> obtenerSerieRecurrente(Long idTareaPadre) {
         return tareaRepository.findSerieRecurrente(idTareaPadre);
+    }
+
+    @Override
+    public List<TareaEntity> obtenerTareasPorSemana(LocalDate fecha) {
+        // Calcular el inicio de la semana (lunes)
+        LocalDate inicioSemana = fecha.with(TemporalAdjusters.previousOrSame(DayOfWeek.MONDAY));
+        
+        // Calcular el fin de la semana (domingo)
+        LocalDate finSemana = fecha.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
+        
+        return tareaRepository.findByFechaBetweenOrderByFechaAsc(inicioSemana, finSemana);
     }
 
     private TareaEntity findById(Long id) {

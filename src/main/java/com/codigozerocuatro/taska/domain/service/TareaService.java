@@ -4,6 +4,7 @@ import com.codigozerocuatro.taska.infra.dto.CrearTareaRequest;
 import com.codigozerocuatro.taska.infra.dto.FiltroTareaRequest;
 import com.codigozerocuatro.taska.infra.persistence.model.TareaEntity;
 
+import java.time.LocalDate;
 import java.util.List;
 
 public interface TareaService {
@@ -37,4 +38,11 @@ public interface TareaService {
      * Obtiene todas las tareas de una serie recurrente (padre e hijas)
      */
     List<TareaEntity> obtenerSerieRecurrente(Long idTareaPadre);
+
+    /**
+     * Obtiene todas las tareas de una semana específica ordenadas por fecha
+     * @param fecha cualquier fecha dentro de la semana deseada
+     * @return lista de tareas de esa semana ordenadas por fecha de menor a mayor
+     */
+    List<TareaEntity> obtenerTareasPorSemana(LocalDate fecha);
 }

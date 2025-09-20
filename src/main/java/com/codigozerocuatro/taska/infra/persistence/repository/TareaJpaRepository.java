@@ -28,4 +28,10 @@ public interface TareaJpaRepository extends JpaRepository<TareaEntity, Long>, Jp
     @Query("SELECT t FROM TareaEntity t WHERE t.idTareaPadre = :idTareaPadre AND t.fecha >= :fecha ORDER BY t.fecha")
     List<TareaEntity> findTareasPosteriores(@Param("idTareaPadre") Long idTareaPadre, @Param("fecha") LocalDate fecha);
 
+    /**
+     * Encuentra todas las tareas en un rango de fechas ordenadas por fecha
+     */
+    @Query("SELECT t FROM TareaEntity t WHERE t.fecha >= :fechaInicio AND t.fecha <= :fechaFin ORDER BY t.fecha ASC")
+    List<TareaEntity> findByFechaBetweenOrderByFechaAsc(@Param("fechaInicio") LocalDate fechaInicio, @Param("fechaFin") LocalDate fechaFin);
+
 }

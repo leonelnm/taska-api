@@ -10,6 +10,7 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.access.prepost.PreAuthorize;
 import org.springframework.web.bind.annotation.*;
 
+import java.time.LocalDate;
 import java.util.List;
 
 @RequiredArgsConstructor
@@ -49,6 +50,12 @@ public class TareaController {
     public ResponseEntity<TareaEntity> complete(@PathVariable Long id) {
         TareaEntity tarea = tareaService.completar(id);
         return ResponseEntity.ok(tarea);
+    }
+
+    @GetMapping("/week")
+    public ResponseEntity<List<TareaEntity>> getTasksForWeek(@RequestParam LocalDate fecha) {
+        List<TareaEntity> tareas = tareaService.obtenerTareasPorSemana(fecha);
+        return ResponseEntity.ok(tareas);
     }
 
 }
