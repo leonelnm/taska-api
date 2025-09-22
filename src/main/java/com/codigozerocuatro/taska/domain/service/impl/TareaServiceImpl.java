@@ -103,7 +103,8 @@ public class TareaServiceImpl implements TareaService {
                         TareaSpecification.diaSemanaEquals(diaSemana),
                         TareaSpecification.tipoRecurrenciaEquals(tipoRecurrencia),
                         TareaSpecification.isCompletadaEquals(filtro.completada()),
-                        fechaSpec
+                        fechaSpec,
+                        TareaSpecification.orderByFechaAsc()
                 )
         );
 

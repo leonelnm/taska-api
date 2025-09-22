@@ -60,4 +60,13 @@ public final class TareaSpecification {
         };
     }
 
+    public static Specification<TareaEntity> orderByFechaAsc() {
+        return (root, query, cb) -> {
+            if (query != null) {
+                query.orderBy(cb.asc(root.get("fecha")));
+            }
+            return cb.conjunction();
+        };
+    }
+
 }
