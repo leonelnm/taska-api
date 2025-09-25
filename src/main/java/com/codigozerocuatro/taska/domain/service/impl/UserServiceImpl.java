@@ -77,7 +77,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CacheEvict(value = "USER", key = "#username", cacheManager = "cacheManagerUser")
+    @CacheEvict(value = "USER", allEntries = true, cacheManager = "cacheManagerUser")
     public void adminChangePassword(String username, String password) {
         UserEntity user = obtenerUsuarioPorUsername(username);
         user.setPassword(passwordEncoder.encode(password));
@@ -93,7 +93,7 @@ public class UserServiceImpl implements UserService {
     }
 
     @Override
-    @CacheEvict(value = "USER", key = "#user.username", cacheManager = "cacheManagerUser")
+    @CacheEvict(value = "USER", allEntries = true, cacheManager = "cacheManagerUser")
     public void changePassword(UserEntity user, String currentPassword, String newPassword) {
         if (newPassword.equals(currentPassword)) {
             throw new AppValidationException(Map.of("newPassword", ErrorCode.PASSWORD_SAME_CURRENT));
