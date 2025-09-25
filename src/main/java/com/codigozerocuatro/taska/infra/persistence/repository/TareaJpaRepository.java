@@ -24,6 +24,7 @@ public interface TareaJpaRepository extends JpaRepository<TareaEntity, Long>, Jp
 
     /**
      * Encuentra tareas posteriores a una fecha específica en una serie recurrente
+     * solo las tareas hijas (excluye la tarea padre)
      */
     @Query("SELECT t FROM TareaEntity t WHERE t.idTareaPadre = :idTareaPadre AND t.fecha >= :fecha ORDER BY t.fecha")
     List<TareaEntity> findTareasPosteriores(@Param("idTareaPadre") Long idTareaPadre, @Param("fecha") LocalDate fecha);

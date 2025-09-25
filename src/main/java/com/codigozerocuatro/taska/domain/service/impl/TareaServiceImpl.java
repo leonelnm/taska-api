@@ -18,7 +18,6 @@ import com.codigozerocuatro.taska.infra.persistence.model.UserEntity;
 import com.codigozerocuatro.taska.infra.persistence.repository.TareaJpaRepository;
 import com.codigozerocuatro.taska.infra.persistence.repository.TurnoJpaRepository;
 import com.codigozerocuatro.taska.infra.persistence.specification.TareaSpecification;
-import jakarta.persistence.EntityNotFoundException;
 import lombok.RequiredArgsConstructor;
 import org.apache.commons.lang3.StringUtils;
 import org.springframework.data.jpa.domain.Specification;
@@ -29,6 +28,7 @@ import java.time.Instant;
 import java.time.LocalDate;
 import java.time.temporal.TemporalAdjusters;
 import java.time.DayOfWeek;
+import java.util.Comparator;
 import java.util.List;
 
 @Service
@@ -138,56 +138,6 @@ public class TareaServiceImpl implements TareaService {
     }
 
     @Override
-    public void eliminarTareaYSusHijas(Long id) {
-        TareaEntity tarea = findById(id);
-        
-        // Si es una tarea padre, eliminar todas las hijas
-        if (tarea.getIdTareaPadre() == null) {
-            List<TareaEntity> tareasHijas = tareaRepository.findByIdTareaPadre(id);
-            tareaRepository.deleteAll(tareasHijas);
-        }
-        
-        // Eliminar la tarea principal
-        tareaRepository.delete(tarea);
-    }
-
-    @Override
-    public void eliminarTareaYPosteriores(Long id) {
-        List<TareaEntity> tareasPosteriores = findTareasPosteriores(id);
-
-        // Eliminar todas las tareas posteriores (incluyendo la actual)
-        tareaRepository.deleteAll(tareasPosteriores);
-    }
-
-    @Override
-    public void actualizarTareaYPosteriores(Long id, String nuevaDescripcion) {
-        List<TareaEntity> tareasPosteriores = findTareasPosteriores(id);
-
-        // Actualizar la descripción de todas las tareas posteriores (incluyendo la actual)
-        tareasPosteriores.forEach(t -> t.setDescripcion(nuevaDescripcion));
-        tareaRepository.saveAll(tareasPosteriores);
-    }
-
-    private List<TareaEntity> findTareasPosteriores(Long id) {
-        TareaEntity tarea = findById(id);
-
-        // Obtener el ID de la tarea padre
-        Long idTareaPadre = tarea.getIdTareaPadre() != null ? tarea.getIdTareaPadre() : id;
-
-        // Obtener todas las tareas posteriores a esta fecha en la serie
-        List<TareaEntity> tareasPosteriores = tareaRepository.findTareasPosteriores(idTareaPadre, tarea.getFecha());
-
-        // Si la tarea actual es la padre, también buscar tareas posteriores que tengan como padre esta tarea
-        if (tarea.getIdTareaPadre() == null) {
-            List<TareaEntity> todasLasTareas = tareaRepository.findSerieRecurrente(id);
-            tareasPosteriores = todasLasTareas.stream()
-                    .filter(t -> !t.getFecha().isBefore(tarea.getFecha()))
-                    .toList();
-        }
-        return tareasPosteriores;
-    }
-
-    @Override
     public List<TareaEntity> obtenerSerieRecurrente(Long idTareaPadre) {
         return tareaRepository.findSerieRecurrente(idTareaPadre);
     }
@@ -201,6 +151,67 @@ public class TareaServiceImpl implements TareaService {
         LocalDate finSemana = fecha.with(TemporalAdjusters.nextOrSame(DayOfWeek.SUNDAY));
         
         return tareaRepository.findByFechaBetweenOrderByFechaAsc(inicioSemana, finSemana);
+    }
+
+    /**
+     * Elimina solo una tarea. Si es padre, actualiza las hijas y la siguiente por fecha será la nueva padre.
+     */
+    @Override
+    @Transactional
+    public void eliminarSoloTarea(Long id) {
+        TareaEntity tarea = findById(id);
+        // Si es tarea hija, simplemente se elimina
+        if (tarea.getIdTareaPadre() != null) {
+            tareaRepository.delete(tarea);
+            return;
+        }
+        // Es tarea padre
+        List<TareaEntity> hijas = tareaRepository.findByIdTareaPadre(id);
+        if (hijas.isEmpty()) {
+            // No hay hijas, solo eliminar la tarea padre
+            tareaRepository.delete(tarea);
+            return;
+        }
+        // Ordenar hijas por fecha ascendente y obtener la primera
+        TareaEntity nuevaPadre = hijas.stream().min(Comparator.comparing(TareaEntity::getFecha))
+                .orElseThrow(); // Esto nunca debería pasar, ya que hijas no está vacío
+
+        nuevaPadre.setIdTareaPadre(null); // Ahora es padre
+        // Actualizar las demás hijas para que apunten a la nueva padre
+        hijas.stream()
+                .filter(hija -> !hija.equals(nuevaPadre))
+                .forEach(hija -> hija.setIdTareaPadre(nuevaPadre.getId()));
+
+        // Persistir cambios
+        tareaRepository.save(nuevaPadre);
+        if (hijas.size() > 1) {
+            tareaRepository.saveAll(hijas.stream().filter(hija -> !hija.equals(nuevaPadre)).toList());
+        }
+        // Eliminar la tarea padre original
+        tareaRepository.delete(tarea);
+    }
+
+    /**
+     * Elimina una tarea y todas las posteriores en la serie recurrente.
+     */
+    @Override
+    @Transactional
+    public void eliminarTareaYPosteriores(Long id) {
+        TareaEntity tarea = findById(id);
+        
+        // Determinar el ID de la tarea padre de la serie
+        Long idTareaPadre = tarea.getIdTareaPadre() != null ? tarea.getIdTareaPadre() : id;
+        
+        // Obtener solo las tareas hijas posteriores (el query ya filtra por idTareaPadre)
+        List<TareaEntity> tareasHijas = tareaRepository.findTareasPosteriores(idTareaPadre, tarea.getFecha());
+        
+        // Eliminar todas las hijas posteriores
+        if (!tareasHijas.isEmpty()) {
+            tareaRepository.deleteAll(tareasHijas);
+        }
+        
+        // Eliminar la tarea actual (ya sea padre o hija)
+        tareaRepository.delete(tarea);
     }
 
     private TareaEntity findById(Long id) {

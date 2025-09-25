@@ -23,6 +23,7 @@ import org.springframework.test.context.bean.override.mockito.MockitoBean;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.util.Comparator;
 import java.util.List;
 
 import static org.junit.jupiter.api.Assertions.*;
@@ -353,5 +354,241 @@ public class TareaServiceIntegrationTest {
         assertTrue(descripciones.contains("Tarea Lunes Posterior"));
         assertTrue(descripciones.contains("Tarea Miércoles Posterior"));
         assertFalse(descripciones.contains("Tarea Semana Posterior")); // Esta está 2 semanas después, fuera del rango
+    }
+
+    @Test
+    void testEliminarSoloTarea_EliminaSoloUnaTarea() {
+        // given - Limpiar las tareas existentes y crear una serie recurrente SEMANAL con 4 tareas
+        tareaRepository.deleteAll();
+        
+        LocalDate fechaInicio = LocalDate.now().plusDays(7); // Una semana desde hoy
+        CrearTareaRequest request = new CrearTareaRequest(
+            "Tarea Semanal Recurrente", 
+            puesto.getId(), 
+            turno.getId(), 
+            TipoRecurrencia.SEMANAL.name(),
+            "LUNES", // Día de la semana
+            null,
+            fechaInicio,
+            4, // 4 repeticiones
+            null
+        );
+
+        // Crear la serie de tareas
+        TareaEntity tareaPadre = tareaService.crear(request);
+        
+        // Obtener todas las tareas creadas para verificar que son 4
+        List<TareaEntity> todasLasTareas = tareaRepository.findAll();
+        assertEquals(4, todasLasTareas.size(), "Debe haber 4 tareas creadas");
+        
+        // Obtener la serie completa
+        List<TareaEntity> serieCompleta = tareaService.obtenerSerieRecurrente(tareaPadre.getId());
+        assertEquals(4, serieCompleta.size(), "La serie debe tener 4 tareas");
+        
+        // Ordenar por fecha para tener un orden predecible
+        serieCompleta.sort(Comparator.comparing(TareaEntity::getFecha));
+        
+        // when - Eliminar la segunda tarea de la serie (no la primera que es padre)
+        Long idSegundaTarea = serieCompleta.get(1).getId();
+        tareaService.eliminarSoloTarea(idSegundaTarea);
+
+        // then - Verificar que solo se eliminó una tarea
+        List<TareaEntity> tareasRestantes = tareaRepository.findAll();
+        assertEquals(3, tareasRestantes.size(), "Debe quedar exactamente 3 tareas después de eliminar una");
+        
+        // Verificar que la tarea eliminada ya no existe
+        assertFalse(tareaRepository.existsById(idSegundaTarea), "La segunda tarea debe haber sido eliminada");
+
+        // Verificar que las demás tareas siguen existiendo
+        assertTrue(tareaRepository.existsById(tareasRestantes.get(0).getId()), "La primera tarea debe seguir existiendo");
+        assertTrue(tareaRepository.existsById(tareasRestantes.get(1).getId()), "La tercera tarea debe seguir existiendo");
+        assertTrue(tareaRepository.existsById(tareasRestantes.get(2).getId()), "La cuarta tarea debe seguir existiendo");
+
+        // Verificar que la tarea padre sigue siendo padre (sin idTareaPadre)
+        TareaEntity tareaPadreActual = tareaRepository.findById(tareaPadre.getId()).orElseThrow();
+        assertNull(tareaPadreActual.getIdTareaPadre(), "La tarea padre debe seguir siendo padre");
+    }
+
+    @Test
+    void testEliminarTareaYPosteriores_EliminaTareaYTodasLasPosteriores() {
+        // given - Limpiar las tareas existentes y crear una serie recurrente QUINCENAL con 4 tareas
+        tareaRepository.deleteAll();
+        
+        LocalDate fechaInicio = LocalDate.now().plusDays(14); // Dos semanas desde hoy
+        CrearTareaRequest request = new CrearTareaRequest(
+            "Tarea Quincenal Recurrente", 
+            puesto.getId(), 
+            turno.getId(), 
+            TipoRecurrencia.QUINCENAL.name(),
+            "MIERCOLES", // Día de la semana
+            null,
+            fechaInicio,
+            4, // 4 repeticiones
+            null
+        );
+
+        // Crear la serie de tareas
+        TareaEntity tareaPadre = tareaService.crear(request);
+        
+        // Obtener todas las tareas creadas para verificar que son 4
+        List<TareaEntity> todasLasTareas = tareaService.todas();
+        assertEquals(4, todasLasTareas.size(), "Debe haber 4 tareas creadas");
+        
+        // Obtener la serie completa y ordenar por fecha
+        List<TareaEntity> serieCompleta = tareaService.obtenerSerieRecurrente(tareaPadre.getId());
+        assertEquals(4, serieCompleta.size(), "La serie debe tener 4 tareas");
+        serieCompleta.sort(Comparator.comparing(TareaEntity::getFecha));
+        
+        // when - Eliminar la segunda tarea y todas las posteriores
+        Long idSegundaTarea = serieCompleta.get(1).getId();
+        tareaService.eliminarTareaYPosteriores(idSegundaTarea);
+
+        // then - Verificar que se eliminaron la segunda, tercera y cuarta tarea
+        List<TareaEntity> tareasRestantes = tareaRepository.findAll();
+        assertEquals(1, tareasRestantes.size(), "Debe quedar solo 1 tarea después de eliminar las posteriores");
+        
+        // Verificar que solo la primera tarea existe
+        assertTrue(tareaRepository.existsById(serieCompleta.get(0).getId()), "La primera tarea debe seguir existiendo");
+        
+        // Verificar que las tareas posteriores fueron eliminadas
+        assertFalse(tareaRepository.existsById(serieCompleta.get(1).getId()), "La segunda tarea debe haber sido eliminada");
+        assertFalse(tareaRepository.existsById(serieCompleta.get(2).getId()), "La tercera tarea debe haber sido eliminada");
+        assertFalse(tareaRepository.existsById(serieCompleta.get(3).getId()), "La cuarta tarea debe haber sido eliminada");
+        
+        // Verificar que la tarea restante sigue siendo válida
+        TareaEntity tareaRestante = tareasRestantes.getFirst();
+        assertEquals("Tarea Quincenal Recurrente", tareaRestante.getDescripcion());
+        assertEquals(TipoRecurrencia.QUINCENAL, tareaRestante.getTipoRecurrencia());
+        assertNull(tareaRestante.getIdTareaPadre(), "La tarea restante debe ser padre");
+    }
+
+    @Test
+    void testEliminarSoloTarea_EliminaTareaPadreYReorganizaHijas() {
+        // given - Limpiar las tareas existentes y crear una serie recurrente MENSUAL con 4 tareas
+        tareaRepository.deleteAll();
+        
+        LocalDate fechaInicio = LocalDate.now().plusDays(30); // Un mes desde hoy
+        CrearTareaRequest request = new CrearTareaRequest(
+            "Tarea Mensual Recurrente", 
+            puesto.getId(), 
+            turno.getId(), 
+            TipoRecurrencia.MENSUAL.name(),
+            null, // Sin día de semana para mensual
+            15,   // Día 15 del mes
+            fechaInicio,
+            4,    // 4 repeticiones
+            null
+        );
+
+        // Crear la serie de tareas
+        TareaEntity tareaPadre = tareaService.crear(request);
+        
+        // Obtener todas las tareas creadas para verificar que son 4
+        List<TareaEntity> todasLasTareas = tareaService.todas();
+        assertEquals(4, todasLasTareas.size(), "Debe haber 4 tareas creadas");
+        
+        // Obtener la serie completa y ordenar por fecha
+        List<TareaEntity> serieCompleta = tareaService.obtenerSerieRecurrente(tareaPadre.getId());
+        serieCompleta.sort(Comparator.comparing(TareaEntity::getFecha));
+        assertEquals(4, serieCompleta.size(), "La serie debe tener 4 tareas");
+        
+        // Verificar que la primera tarea es la padre (sin idTareaPadre)
+        TareaEntity tareaPadreOriginal = serieCompleta.getFirst();
+        assertNull(tareaPadreOriginal.getIdTareaPadre(), "La primera tarea debe ser la tarea padre original");
+        assertEquals(tareaPadre.getId(), tareaPadreOriginal.getId(), "Debe ser la misma tarea padre creada");
+        
+        // Verificar que las demás son hijas
+        for (int i = 1; i < serieCompleta.size(); i++) {
+            assertEquals(tareaPadre.getId(), serieCompleta.get(i).getIdTareaPadre(), 
+                "Las tareas hijas deben apuntar a la tarea padre");
+        }
+
+        // when - Eliminar la tarea padre (primera tarea)
+        tareaService.eliminarSoloTarea(tareaPadre.getId());
+
+        // then - Verificar que solo se eliminó la tarea padre
+        List<TareaEntity> tareasRestantes = tareaRepository.findAll();
+        assertEquals(3, tareasRestantes.size(), "Debe quedar exactamente 3 tareas después de eliminar el padre");
+        
+        // Verificar que la tarea padre original fue eliminada
+        assertFalse(tareaRepository.existsById(tareaPadre.getId()), "La tarea padre original debe haber sido eliminada");
+        
+        // Verificar que las otras 3 tareas siguen existiendo
+        assertTrue(tareaRepository.existsById(serieCompleta.get(1).getId()), "La segunda tarea debe seguir existiendo");
+        assertTrue(tareaRepository.existsById(serieCompleta.get(2).getId()), "La tercera tarea debe seguir existiendo");
+        assertTrue(tareaRepository.existsById(serieCompleta.get(3).getId()), "La cuarta tarea debe seguir existiendo");
+        
+        // Verificar que se reorganizó la estructura padre-hijo
+        // La segunda tarea (por fecha) debe convertirse en la nueva tarea padre
+        TareaEntity nuevaTareaPadre = tareaRepository.findById(serieCompleta.get(1).getId()).orElseThrow();
+        assertNull(nuevaTareaPadre.getIdTareaPadre(), "La segunda tarea debe convertirse en la nueva tarea padre");
+        
+        // Las tareas restantes deben apuntar a la nueva tarea padre
+        TareaEntity terceraTarea = tareaRepository.findById(serieCompleta.get(2).getId()).orElseThrow();
+        TareaEntity cuartaTarea = tareaRepository.findById(serieCompleta.get(3).getId()).orElseThrow();
+        
+        assertEquals(nuevaTareaPadre.getId(), terceraTarea.getIdTareaPadre(), 
+            "La tercera tarea debe apuntar a la nueva tarea padre");
+        assertEquals(nuevaTareaPadre.getId(), cuartaTarea.getIdTareaPadre(), 
+            "La cuarta tarea debe apuntar a la nueva tarea padre");
+        
+        // Verificar que todas las tareas mantienen sus propiedades originales
+        assertEquals("Tarea Mensual Recurrente", nuevaTareaPadre.getDescripcion());
+        assertEquals("Tarea Mensual Recurrente", terceraTarea.getDescripcion());
+        assertEquals("Tarea Mensual Recurrente", cuartaTarea.getDescripcion());
+    }
+
+    @Test
+    void testEliminarTareaYPosteriores_EliminaTareaPadreYTodasLasHijas() {
+        // given - Limpiar las tareas existentes y crear una serie recurrente DIARIA con 4 tareas
+        tareaRepository.deleteAll();
+        
+        LocalDate fechaInicio = LocalDate.now().plusDays(5); // 5 días desde hoy
+        CrearTareaRequest request = new CrearTareaRequest(
+            "Tarea Diaria Recurrente", 
+            puesto.getId(), 
+            turno.getId(), 
+            TipoRecurrencia.DIARIA.name(),
+            null, // Sin día de semana para diaria
+            null, // Sin día de mes para diaria
+            fechaInicio,
+            4,    // 4 repeticiones
+            null
+        );
+
+        // Crear la serie de tareas
+        TareaEntity tareaPadre = tareaService.crear(request);
+        
+        // Obtener todas las tareas creadas para verificar que son 4
+        List<TareaEntity> todasLasTareas = tareaRepository.findAll();
+        assertEquals(4, todasLasTareas.size(), "Debe haber 4 tareas creadas");
+        
+        // Obtener la serie completa y ordenar por fecha
+        List<TareaEntity> serieCompleta = tareaService.obtenerSerieRecurrente(tareaPadre.getId());
+        serieCompleta.sort(Comparator.comparing(TareaEntity::getFecha));
+        assertEquals(4, serieCompleta.size(), "La serie debe tener 4 tareas");
+        
+        // Verificar estructura inicial: padre + 3 hijas
+        TareaEntity tareaPadreOriginal = serieCompleta.getFirst();
+        assertNull(tareaPadreOriginal.getIdTareaPadre(), "La primera tarea debe ser la tarea padre");
+        
+        for (int i = 1; i < serieCompleta.size(); i++) {
+            assertEquals(tareaPadre.getId(), serieCompleta.get(i).getIdTareaPadre(), 
+                "Las tareas hijas deben apuntar a la tarea padre");
+        }
+
+        // when - Eliminar la tarea padre y todas las posteriores (toda la serie)
+        // Este era el caso problemático: integridad referencial padre->hijas
+        tareaService.eliminarTareaYPosteriores(tareaPadre.getId());
+
+        // then - Verificar que se eliminaron todas las tareas
+        List<TareaEntity> tareasRestantes = tareaRepository.findAll();
+        assertEquals(0, tareasRestantes.size(), "No debe quedar ninguna tarea después de eliminar toda la serie");
+        
+        // Verificar que ninguna de las tareas originales existe
+        assertFalse(tareaRepository.existsById(serieCompleta.get(0).getId()), "La primera tarea debe haber sido eliminada");
+        assertFalse(tareaRepository.existsById(serieCompleta.get(1).getId()), "La segunda tarea debe haber sido eliminada");
+        assertFalse(tareaRepository.existsById(serieCompleta.get(2).getId()), "La tercera tarea debe haber sido eliminada");
+        assertFalse(tareaRepository.existsById(serieCompleta.get(3).getId()), "La cuarta tarea debe haber sido eliminada");
     }
 }

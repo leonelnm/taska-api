@@ -41,6 +41,20 @@ public class TareaController {
         return ResponseEntity.ok(tareas);
     }
 
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}/eliminar-todas")
+    public ResponseEntity<Void> delete(@PathVariable Long id) {
+        tareaService.eliminarTareaYPosteriores(id);
+        return ResponseEntity.noContent().build();
+    }
+
+    @PreAuthorize("hasRole('ADMIN')")
+    @DeleteMapping("/{id}/eliminar")
+    public ResponseEntity<Void> deleteUnica(@PathVariable Long id) {
+        tareaService.eliminarSoloTarea(id);
+        return ResponseEntity.noContent().build();
+    }
+
     @GetMapping
     public List<TareaEntity> search(@ModelAttribute FiltroTareaRequest filtro) {
         return tareaService.buscar(filtro);
