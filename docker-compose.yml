@@ -5,6 +5,7 @@ services:
     restart: unless-stopped
     environment:
       SPRING_PROFILES_ACTIVE: prod
+      VIRTUAL_PORT: 8080
     env_file:
       - .env
     volumes:
