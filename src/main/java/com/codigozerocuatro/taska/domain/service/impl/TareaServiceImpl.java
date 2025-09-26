@@ -2,6 +2,7 @@ package com.codigozerocuatro.taska.domain.service.impl;
 
 import com.codigozerocuatro.taska.domain.exception.AppEntityNotFoundException;
 import com.codigozerocuatro.taska.domain.model.DiaSemana;
+import com.codigozerocuatro.taska.domain.model.PuestoEnum;
 import com.codigozerocuatro.taska.domain.model.TareaValida;
 import com.codigozerocuatro.taska.domain.model.TipoRecurrencia;
 import com.codigozerocuatro.taska.domain.service.PuestoService;
@@ -114,7 +115,7 @@ public class TareaServiceImpl implements TareaService {
     private Long getPuestoByUser(FiltroTareaRequest filtro) {
         UserEntity user = securityUtils.getCurrentAuthenticatedUser();
 
-        if (user.isAdmin()){
+        if (user.isAdmin() || PuestoEnum.ENCARGADO.equals(user.getPuesto())){
             return filtro.puestoId();
         }
 
