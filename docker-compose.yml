@@ -9,5 +9,5 @@ services:
       - .env
     volumes:
       - /var/apps/taska/logs:/app/logs
-    ports:
-      - "8085:8080"
+    networks:
+      - nginx-proxy
