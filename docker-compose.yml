@@ -12,7 +12,11 @@ services:
       - /var/apps/taska/logs:/app/logs
     networks:
       - nginx-proxy
+      - database-net
 
 networks:
   nginx-proxy:
+    external: true
+
+  database-net:
     external: true
